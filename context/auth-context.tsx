@@ -47,6 +47,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.warn('LocalStorage not accessible', e);
     }
   }, []);
+  const switchUser = (profileId: string) => {
+    const found = profiles.find((p) => p.id === profileId);
+    if (found) {
+      setCurrentUser(found);
+      try { localStorage.setItem(LOCAL_STORAGE_KEY_USER, found.id); } catch (e) {}
+      showToast('Switched User', `Switched active user to ${found.full_name || found.email}`, 'info');
+    }
+  }
 
   const registerNewUser = async (
     email: string,
@@ -149,6 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         allProfiles: profiles,
         isAdmin: currentUser.role === 'admin',
         switchUser,
+          registerNewUser,
         updateUserRole,
         updateProfile,
         isLiveSupabase,

@@ -4,6 +4,7 @@ import { ToastProvider } from '@/context/toast-context';
 import { AuthProvider } from '@/context/auth-context';
 import { ScheduleProvider } from '@/context/schedule-context';
 import { AppShell } from '@/components/layout/app-shell';
+import { ReminderNotifier } from '@/components/reminders/reminder-notifier';
 
 export const metadata: Metadata = {
   title: 'Antigravity AI Scheduling & Appointment System',
@@ -23,6 +24,7 @@ export default function RootLayout({
           <AuthProvider>
             <ScheduleProvider>
               <AppShell>{children}</AppShell>
+              <ReminderNotifier />
             </ScheduleProvider>
           </AuthProvider>
         </ToastProvider>
@@ -30,3 +32,4 @@ export default function RootLayout({
     </html>
   );
 }
+

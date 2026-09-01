@@ -125,7 +125,36 @@ export function Navbar() {
         </div>
 
         {/* Right Section: Persona Switcher & Badges */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Quick 3-Min Test Reminder Button */}
+          <button
+            type="button"
+            onClick={async () => {
+              const targetTime = new Date(Date.now() + 3 * 60 * 1000);
+              await createSchedule({
+                title: '⚡ Quick Test Reminder (3-Minute Alert)',
+                description: 'This is an automatic test reminder triggered 3 minutes after creation.',
+                category_id: null,
+                frequency: 'daily',
+                interval_value: 1,
+                custom_rule_json: null,
+                start_time: targetTime.toISOString(),
+                end_time: new Date(targetTime.getTime() + 15 * 60 * 1000).toISOString(),
+                is_completed: false,
+              });
+              showToast(
+                '3-Min Reminder Scheduled! ⏰',
+                `Alert will pop up at ${targetTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} with chime & visual alert.`,
+                'success'
+              );
+            }}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold transition-all shadow-sm"
+            title="Schedule a test reminder 3 minutes from now"
+          >
+            <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+            <span>+3m Test Alert</span>
+          </button>
+
           {/* Invites notification badge */}
           <Link
             href="/appointments"

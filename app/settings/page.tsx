@@ -17,6 +17,8 @@ import {
   Copy,
   Check,
   CheckCircle2,
+  Mail,
+  Send,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -285,6 +287,87 @@ create table public.profiles (
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Email Notifications Configuration Section */}
+      <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl backdrop-blur-md space-y-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <Mail className="w-4 h-4 text-cyan-400" />
+              Email Notifications & Dispatch Engine
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Automated branded HTML email dispatch for meeting invitations, forwarded invites, and upcoming due reminders.
+            </p>
+          </div>
+          <span className="text-[10px] px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+            Active
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-1">
+            <div className="text-xs font-bold text-slate-200">Meeting Invites</div>
+            <div className="text-[11px] text-slate-400">
+              Dispatches invitations to participants when appointments are scheduled.
+            </div>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-1">
+            <div className="text-xs font-bold text-slate-200">Forwarded Invites</div>
+            <div className="text-[11px] text-slate-400">
+              Notifies users when colleagues forward meetings under <code className="text-indigo-400">can_reshare</code>.
+            </div>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-1">
+            <div className="text-xs font-bold text-slate-200">Due Reminders</div>
+            <div className="text-[11px] text-slate-400">
+              Sends instant email alerts when recurring routines arrive.
+            </div>
+          </div>
+        </div>
+
+        {/* Test Email Trigger */}
+        <div className="p-4 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="text-xs font-bold text-cyan-200">Test Email Notification</div>
+            <div className="text-[11px] text-slate-400">
+              Send a test HTML email payload to <span className="font-mono text-cyan-300">{currentUser.email}</span>.
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={async () => {
+              try {
+                const res = await fetch('/api/notifications/email', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    to: currentUser.email,
+                    recipientName: currentUser.full_name || 'User',
+                    subject: '⚡ Test Email: Antigravity AI Notification Engine',
+                    type: 'schedule_reminder',
+                    eventTitle: 'Antigravity AI Quantum Sync (Test Alert)',
+                    eventDescription: 'This is an automatic test notification verifying the email delivery pipeline.',
+                    startTime: new Date().toISOString(),
+                    hostName: 'Antigravity Automated Notifier',
+                  }),
+                });
+                const data = await res.json();
+                showToast(
+                  'Email Dispatched! ✉️',
+                  `Successfully sent test notification to ${currentUser.email}.`,
+                  'success'
+                );
+              } catch (e) {
+                showToast('Email Error', 'Failed to dispatch email test.', 'error');
+              }
+            }}
+          >
+            <Send className="w-3.5 h-3.5 text-cyan-400" /> Send Test Email
+          </Button>
         </div>
       </div>
 

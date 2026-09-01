@@ -235,7 +235,30 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     saveAppointments([newAppointment, ...appointments]);
     saveParticipants([...participants, creatorParticipant, ...invitedParticipants]);
 
-    showToast('Appointment Scheduled', `Invited ${invitedParticipants.length} participant(s).`, 'success');
+    // Dispatch email notifications to all invited participants asynchronously
+    invitedParticipants.forEach(async (p) => {
+      if (p.profile?.email) {
+        try {
+          await fetch('/api/notifications/email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: p.profile.email,
+              recipientName: p.profile.full_name || 'Team Member',
+              subject: `📅 Invitation: ${newAppointment.title}`,
+              type: 'appointment_invite',
+              eventTitle: newAppointment.title,
+              eventDescription: newAppointment.description,
+              startTime: newAppointment.start_time,
+              endTime: newAppointment.end_time,
+              hostName: currentUser.full_name || 'Meeting Host',
+            }),
+          });
+        } catch (e) {}
+      }
+    });
+
+    showToast('Appointment Scheduled', `Invited ${invitedParticipants.length} participant(s) & dispatched email notices.`, 'success');
     return newAppointment;
   };
 
@@ -332,7 +355,29 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     };
 
     saveParticipants([...participants, newParticipant]);
-    showToast('Invitation Forwarded', `Forwarded appointment invite to ${targetProfile?.full_name || 'user'}.`, 'success');
+
+    // Dispatch forwarded email notification
+    if (targetProfile?.email) {
+      try {
+        await fetch('/api/notifications/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: targetProfile.email,
+            recipientName: targetProfile.full_name || 'Team Member',
+            subject: `↪️ Forwarded Meeting: ${appt.title}`,
+            type: 'forward_invite',
+            eventTitle: appt.title,
+            eventDescription: appt.description,
+            startTime: appt.start_time,
+            endTime: appt.end_time,
+            hostName: currentUser.full_name || 'A Colleague',
+          }),
+        });
+      } catch (e) {}
+    }
+
+    showToast('Invitation Forwarded', `Forwarded appointment invite & dispatched email notice to ${targetProfile?.full_name || 'user'}.`, 'success');
     return true;
   };
 

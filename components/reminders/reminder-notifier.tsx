@@ -135,6 +135,23 @@ export function ReminderNotifier() {
         'warning'
       );
 
+      // Dispatch Email reminder alert
+      try {
+        fetch('/api/notifications/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: 'user@antigravity.ai',
+            recipientName: 'Schedule Owner',
+            subject: `⏰ Reminder: ${item.title}`,
+            type: 'schedule_reminder',
+            eventTitle: item.title,
+            eventDescription: item.description,
+            startTime: item.startTime.toISOString(),
+          }),
+        }).catch(() => {});
+      } catch (e) {}
+
       // System notification if permitted
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
         try {

@@ -10,6 +10,7 @@ interface AuthContextType {
   allProfiles: Profile[];
   isAdmin: boolean;
   switchUser: (profileId: string) => void;
+  registerNewUser: (email: string, fullName?: string, role?: UserRole) => Promise<Profile>;
   updateUserRole: (targetUserId: string, newRole: UserRole) => Promise<boolean>;
   updateProfile: (updatedData: Partial<Profile>) => Promise<boolean>;
   isLiveSupabase: boolean;
@@ -47,15 +48,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const switchUser = (profileId: string) => {
-    const target = profiles.find((p) => p.id === profileId);
-    if (target) {
-      setCurrentUser(target);
+  const registerNewUser = async (
+    email: string,
+    fullName?: string,
+    role: UserRole = 'user'
+  ): Promise<Profile> => {
+    // Check if already exists
+    const existing = profiles.find((p) => p.email.toLowerCase() === email.toLowerCase());
+    if (existing) {
+      setCurrentUser(existing);
       try {
-        localStorage.setItem(LOCAL_STORAGE_KEY_USER, target.id);
+        localStorage.setItem(LOCAL_STORAGE_KEY_USER, existing.id);
       } catch (e) {}
-      showToast('Switched Persona', `Active profile is now ${target.full_name} (${target.role.toUpperCase()})`, 'info');
+      showToast('Welcome Back', `Logged in as ${existing.full_name || existing.email}`, 'success');
+      return existing;
     }
+
+    const newProfile: Profile = {
+      id: `user-${Date.now()}`,
+      email: email.trim().toLowerCase(),
+      full_name: fullName?.trim() || email.split('@')[0],
+      avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`,
+      role,
+      created_at: new Date().toISOString(),
+    };
+
+    const updated = [...profiles, newProfile];
+    setProfiles(updated);
+    setCurrentUser(newProfile);
+
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY_PROFILES, JSON.stringify(updated));
+      localStorage.setItem(LOCAL_STORAGE_KEY_USER, newProfile.id);
+    } catch (e) {}
+
+    // Send Welcome Email Notification
+    try {
+      fetch('/api/notifications/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: newProfile.email,
+          recipientName: newProfile.full_name || 'New Member',
+          subject: '🎉 Welcome to Antigravity AI Scheduling System!',
+          type: 'daily_digest',
+          eventTitle: 'Account Verified & Notification Dispatch Active',
+          eventDescription:
+            'Your account is ready. You will automatically receive email notifications whenever team members invite you to meetings or your scheduled routines are due.',
+          startTime: new Date().toISOString(),
+          hostName: 'Antigravity AI System',
+        }),
+      }).catch(() => {});
+    } catch (e) {}
+
+    showToast('Account Registered! 🚀', `Registered as ${newProfile.full_name} (${newProfile.email})`, 'success');
+    return newProfile;
   };
 
   const updateUserRole = async (targetUserId: string, newRole: UserRole): Promise<boolean> => {

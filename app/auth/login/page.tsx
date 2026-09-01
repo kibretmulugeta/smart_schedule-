@@ -10,21 +10,23 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const { allProfiles, switchUser } = useAuth();
+  const { allProfiles, switchUser, registerNewUser } = useAuth();
   const { showToast } = useToast();
   const router = useRouter();
 
   const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleAuthSubmit = (e: React.FormEvent) => {
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    showToast(
-      'Authentication Initialized',
-      `Simulated ${isSignUp ? 'Registration' : 'Login'} for ${email}. Using active persona store.`,
-      'success'
-    );
+    if (!email.trim()) return;
+
+    setLoading(true);
+    await registerNewUser(email.trim(), fullName.trim() || undefined, 'user');
+    setLoading(false);
     router.push('/');
   };
 
@@ -115,6 +117,15 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleAuthSubmit} className="space-y-3">
+            {isSignUp && (
+              <Input
+                type="text"
+                placeholder="Full Name (e.g., Sarah Connor)"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+              />
+            )}
             <Input
               type="email"
               placeholder="name@company.com"
@@ -129,8 +140,12 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <Button type="submit" variant="primary" className="w-full">
-              {isSignUp ? 'Create Supabase Account' : 'Sign In with Supabase'}
+            <Button type="submit" variant="primary" className="w-full" disabled={loading}>
+              {loading
+                ? 'Processing...'
+                : isSignUp
+                ? 'Create Account & Enable Notifications'
+                : 'Sign In to Antigravity'}
             </Button>
           </form>
 

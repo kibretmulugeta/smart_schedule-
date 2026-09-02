@@ -39,7 +39,15 @@ Supports complex scheduling frequencies:
 - **Week & Day Timetable**: Hourly time-block view with conflict detection overlays and drag-to-slot interaction.
 - **Agenda View**: Chronological upcoming timeline with completion checkoffs and search/filter.
 
-### 5. Role-Based Access Control & Admin Center
+### 5. Comprehensive Registration & Auth System
+- **Multi-Tab Auth Center**: Dedicated Sign In, Register, and 1-Click Instant Persona Switcher tabs.
+- **Live Password Security Meter**: Real-time visual evaluation of password strength criteria (8+ chars, uppercase, numbers, special symbols).
+- **Reusable Auth Modal**: Popup authentication modal available anywhere in the app.
+- **Single Sign-On (SSO)**: Google Workspace and GitHub OAuth option buttons.
+- **Session Control & Log Out**: Prominent top header **Log Out** button and sidebar session controls with instant state cleanup.
+- **Forgot Password Modal**: Recovery email dispatch system.
+
+### 6. Role-Based Access Control & Admin Center
 - Elevation and demotion of roles (`admin` vs `user`) strictly enforced by PostgreSQL RLS.
 - Interactive persona switcher to test permissions in real time.
 
@@ -57,6 +65,23 @@ The complete SQL setup is available at [`supabase/schema.sql`](supabase/schema.s
 - `public.schedules`: Recurring schedules with `frequency`, `interval_value`, `custom_rule_json`, and completion state.
 - `public.appointments`: Multi-party meetings with `creator_id`, `start_time`, `end_time`.
 - `public.appointment_participants`: Multi-party RSVP states and `can_reshare` forwarding permissions.
+
+---
+
+## Deployment (Vercel & Render)
+
+### Automated GitHub Deployment
+The project is configured for continuous deployment on both **Vercel** (`vercel.json`) and **Render** (`render.yaml`). Pushing to the `main` branch automatically builds and deploys the latest version.
+
+```bash
+git push origin main
+```
+
+### Manual Production Build
+```bash
+npm run build
+npm start
+```
 
 ---
 

@@ -143,14 +143,22 @@ create policy "Manage participants."
 -- Automatic Profile Creation Trigger on Supabase Auth Signup
 create or replace function public.handle_new_user()
 returns trigger as $$
+declare
+  assigned_role user_role;
 begin
+  if new.email = 'kibretmail@gmail.com' then
+    assigned_role := 'admin'::user_role;
+  else
+    assigned_role := coalesce((new.raw_user_meta_data->>'role')::user_role, 'user'::user_role);
+  end if;
+
   insert into public.profiles (id, email, full_name, avatar_url, role)
   values (
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
     coalesce(new.raw_user_meta_data->>'avatar_url', 'https://api.dicebear.com/7.x/avataaars/svg?seed=' || new.id),
-    coalesce((new.raw_user_meta_data->>'role')::user_role, 'user'::user_role)
+    assigned_role
   )
   on conflict (id) do nothing;
   

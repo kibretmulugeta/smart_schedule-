@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
     const htmlContent = generateEmailHtml(body);
 
-    // If RESEND_API_KEY is configured in env, send real email via Resend API
+    // If RESEND_API_KEY is configured in env, try real email via Resend API
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey) {
       try {
@@ -25,20 +25,25 @@ export async function POST(req: NextRequest) {
             Authorization: `Bearer ${resendApiKey}`,
           },
           body: JSON.stringify({
-            from: process.env.EMAIL_FROM || 'Antigravity AI <notifications@antigravity.ai>',
+            from: process.env.EMAIL_FROM || 'Antigravity AI <onboarding@resend.dev>',
             to: [body.to],
             subject: body.subject,
             html: htmlContent,
           }),
         });
 
-        const resendData = await resendResponse.json();
-        return NextResponse.json({
-          success: true,
-          mode: 'resend_live',
-          data: resendData,
-          htmlPreview: htmlContent,
-        });
+        if (resendResponse.ok) {
+          const resendData = await resendResponse.json();
+          return NextResponse.json({
+            success: true,
+            mode: 'resend_live',
+            data: resendData,
+            htmlPreview: htmlContent,
+          });
+        } else {
+          const errData = await resendResponse.json();
+          console.warn('Resend returned API warning/error:', errData);
+        }
       } catch (err: any) {
         console.warn('Resend API call issue, falling back to simulated dispatch', err);
       }

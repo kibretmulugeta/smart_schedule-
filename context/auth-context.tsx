@@ -79,12 +79,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Auto-create profile if logging in for demo
+    const isAdminEmail = targetEmail === 'kibretmail@gmail.com';
     const newProfile: Profile = {
       id: `user-${Date.now()}`,
       email: targetEmail,
-      full_name: targetEmail.split('@')[0],
+      full_name: isAdminEmail ? 'Kibret Mulugeta (System Admin)' : targetEmail.split('@')[0],
       avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(targetEmail)}`,
-      role: 'user',
+      role: isAdminEmail ? 'admin' : 'user',
       created_at: new Date().toISOString(),
     };
 
@@ -118,12 +119,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return existing;
     }
 
+    const isAdminEmail = targetEmail === 'kibretmail@gmail.com';
+    const finalRole = isAdminEmail ? 'admin' : role;
+
     const newProfile: Profile = {
       id: `user-${Date.now()}`,
       email: targetEmail,
-      full_name: fullName?.trim() || targetEmail.split('@')[0],
+      full_name: fullName?.trim() || (isAdminEmail ? 'Kibret Mulugeta (System Admin)' : targetEmail.split('@')[0]),
       avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(targetEmail)}`,
-      role,
+      role: finalRole,
       created_at: new Date().toISOString(),
     };
 

@@ -2,10 +2,18 @@ import { Profile, Category, Schedule, Appointment, AppointmentParticipantWithPro
 
 export const MOCK_PROFILES: Profile[] = [
   {
+    id: 'user-admin-kibret',
+    email: 'kibretmail@gmail.com',
+    full_name: 'Kibret Mulugeta (System Admin)',
+    avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    role: 'admin',
+    created_at: '2026-01-01T08:00:00Z',
+  },
+  {
     id: 'user-admin-001',
     email: 'alex.vance@antigravity.ai',
-    full_name: 'Alex Vance (Lead Architect)',
-    avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    full_name: 'Alex Vance (Architect)',
+    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
     role: 'admin',
     created_at: '2026-01-01T08:00:00Z',
   },

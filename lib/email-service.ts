@@ -17,8 +17,24 @@ export interface EmailNotificationPayload {
  * Generates responsive branded HTML email templates for Antigravity AI notifications
  */
 export function generateEmailHtml(payload: EmailNotificationPayload): string {
-  const startFormatted = format(new Date(payload.startTime), 'EEEE, MMMM d, yyyy · h:mm a');
-  const endFormatted = payload.endTime ? format(new Date(payload.endTime), 'h:mm a') : null;
+  let startFormatted = 'Upcoming Scheduled Event';
+  try {
+    const d = payload.startTime ? new Date(payload.startTime) : new Date();
+    if (!isNaN(d.getTime())) {
+      startFormatted = format(d, 'EEEE, MMMM d, yyyy · h:mm a');
+    }
+  } catch (e) {}
+
+  let endFormatted: string | null = null;
+  if (payload.endTime) {
+    try {
+      const dEnd = new Date(payload.endTime);
+      if (!isNaN(dEnd.getTime())) {
+        endFormatted = format(dEnd, 'h:mm a');
+      }
+    } catch (e) {}
+  }
+
   const timeRange = endFormatted ? `${startFormatted} – ${endFormatted}` : startFormatted;
 
   let badgeColor = '#6366F1';

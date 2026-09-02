@@ -9,7 +9,7 @@ import {
   ParticipantStatus,
   FrequencyType,
 } from '@/types/database.types';
-import { MOCK_SCHEDULES, MOCK_APPOINTMENTS, MOCK_PARTICIPANTS, MOCK_CATEGORIES } from '@/lib/mock-data';
+import { MOCK_SCHEDULES, MOCK_APPOINTMENTS, MOCK_PARTICIPANTS, MOCK_CATEGORIES, MOCK_PROFILES } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
 import { useToast } from './toast-context';
 import confetti from 'canvas-confetti';

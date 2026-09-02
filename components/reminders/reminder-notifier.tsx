@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSchedule } from '@/context/schedule-context';
 import { useToast } from '@/context/toast-context';
+import { useAuth } from '@/context/auth-context';
 import { Schedule, Appointment } from '@/types/database.types';
 import {
   BellRing,

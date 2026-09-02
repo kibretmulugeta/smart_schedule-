@@ -63,6 +63,12 @@ export function Sidebar() {
       icon: <Settings className="w-4 h-4" />,
       badge: undefined,
     },
+    {
+      href: '/auth/login',
+      label: 'Registration & Auth',
+      icon: <Lock className="w-4 h-4 text-indigo-400" />,
+      badge: 'Auth',
+    },
   ];
 
   return (

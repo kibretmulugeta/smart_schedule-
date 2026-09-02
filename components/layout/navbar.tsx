@@ -7,6 +7,7 @@ import { useToast } from '@/context/toast-context';
 import { parseNaturalLanguageInput } from '@/lib/ai-scheduler';
 import { ScheduleModal } from '@/components/schedules/schedule-modal';
 import { AppointmentModal } from '@/components/appointments/appointment-modal';
+import { AuthModal } from '@/components/auth/auth-modal';
 import {
   Sparkles,
   Search,
@@ -18,23 +19,26 @@ import {
   Layers,
   Zap,
   Clock,
+  LogOut,
+  LogIn,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export function Navbar() {
-  const { currentUser, allProfiles, switchUser, isAdmin } = useAuth();
+  const { currentUser, allProfiles, switchUser, isAdmin, isAuthenticated, signOut } = useAuth();
   const { participants, createSchedule, createAppointment } = useSchedule();
   const { showToast } = useToast();
 
   const [aiPrompt, setAiPrompt] = useState('');
   const [isProcessingAi, setIsProcessingAi] = useState(false);
   const [showPersonaMenu, setShowPersonaMenu] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Pending invites count for current user
-  const pendingInvitesCount = participants.filter(
-    (p) => p.user_id === currentUser.id && p.status === 'pending'
-  ).length;
+  const pendingInvitesCount = currentUser
+    ? participants.filter((p) => p.user_id === currentUser.id && p.status === 'pending').length
+    : 0;
 
   const handleQuickAiSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,6 +172,16 @@ export function Navbar() {
             )}
           </Link>
 
+          {/* Quick Login / Register Modal trigger */}
+          <button
+            type="button"
+            onClick={() => setShowAuthModal(true)}
+            className="px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold transition-all flex items-center gap-1.5"
+          >
+            <LogIn className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="hidden md:inline">Auth Center</span>
+          </button>
+
           {/* Persona Switcher Dropdown */}
           <div className="relative">
             <button
@@ -175,7 +189,7 @@ export function Navbar() {
               className="flex items-center gap-2.5 p-1.5 pr-3 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition-all"
             >
               <div className="relative w-7 h-7 rounded-lg overflow-hidden bg-slate-800 border border-indigo-500/40">
-                {currentUser.avatar_url ? (
+                {currentUser?.avatar_url ? (
                   <Image
                     src={currentUser.avatar_url}
                     alt={currentUser.full_name || 'User'}
@@ -188,7 +202,7 @@ export function Navbar() {
               </div>
               <div className="text-left hidden md:block">
                 <div className="text-xs font-bold text-slate-200 leading-tight">
-                  {currentUser.full_name?.split(' ')[0]}
+                  {currentUser?.full_name?.split(' ')[0] || 'Guest'}
                 </div>
                 <div className="text-[10px] font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-1">
                   {isAdmin ? (
@@ -196,7 +210,7 @@ export function Navbar() {
                   ) : (
                     <User className="w-2.5 h-2.5 text-slate-400" />
                   )}
-                  {currentUser.role}
+                  {currentUser?.role || 'Guest'}
                 </div>
               </div>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-1" />
@@ -216,7 +230,7 @@ export function Navbar() {
 
                 <div className="space-y-1">
                   {allProfiles.map((profile) => {
-                    const isSelected = profile.id === currentUser.id;
+                    const isSelected = profile.id === currentUser?.id;
                     return (
                       <button
                         key={profile.id}
@@ -264,11 +278,36 @@ export function Navbar() {
                     );
                   })}
                 </div>
+
+                {/* Explicit Sign Out & Register Button */}
+                <div className="pt-2 mt-2 border-t border-slate-800/80 space-y-1">
+                  <Link
+                    href="/auth/login"
+                    onClick={() => setShowPersonaMenu(false)}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-indigo-400 hover:bg-indigo-950/40 transition-colors"
+                  >
+                    <LogIn className="w-3.5 h-3.5" /> Full Auth & Registration Page
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      signOut();
+                      setShowPersonaMenu(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-950/30 transition-colors"
+                  >
+                    <LogOut className="w-3.5 h-3.5" /> Sign Out Session
+                  </button>
+                </div>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Global Auth Modal Popup */}
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </header>
   );
 }

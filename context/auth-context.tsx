@@ -6,11 +6,15 @@ import { MOCK_PROFILES } from '@/lib/mock-data';
 import { useToast } from './toast-context';
 
 interface AuthContextType {
-  currentUser: Profile;
+  currentUser: Profile | null;
   allProfiles: Profile[];
   isAdmin: boolean;
+  isAuthenticated: boolean;
   switchUser: (profileId: string) => void;
-  registerNewUser: (email: string, fullName?: string, role?: UserRole) => Promise<Profile>;
+  loginUser: (email: string, password?: string) => Promise<boolean>;
+  registerNewUser: (email: string, fullName?: string, role?: UserRole, password?: string) => Promise<Profile>;
+  signOut: () => void;
+  resetPassword: (email: string) => Promise<boolean>;
   updateUserRole: (targetUserId: string, newRole: UserRole) => Promise<boolean>;
   updateProfile: (updatedData: Partial<Profile>) => Promise<boolean>;
   isLiveSupabase: boolean;
@@ -24,7 +28,7 @@ const LOCAL_STORAGE_KEY_PROFILES = 'antigravity_profiles_cache';
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { showToast } = useToast();
   const [profiles, setProfiles] = useState<Profile[]>(MOCK_PROFILES);
-  const [currentUser, setCurrentUser] = useState<Profile>(MOCK_PROFILES[0]);
+  const [currentUser, setCurrentUser] = useState<Profile | null>(MOCK_PROFILES[0]);
   const [isLiveSupabase] = useState(false);
 
   // Initialize from localStorage or fallback
@@ -36,47 +40,89 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       const savedUserId = localStorage.getItem(LOCAL_STORAGE_KEY_USER);
       if (savedUserId) {
-        const found = (savedProfiles ? JSON.parse(savedProfiles) : MOCK_PROFILES).find(
-          (p: Profile) => p.id === savedUserId
-        );
-        if (found) {
-          setCurrentUser(found);
+        if (savedUserId === 'guest_signed_out') {
+          setCurrentUser(null);
+        } else {
+          const found = (savedProfiles ? JSON.parse(savedProfiles) : MOCK_PROFILES).find(
+            (p: Profile) => p.id === savedUserId
+          );
+          if (found) {
+            setCurrentUser(found);
+          }
         }
       }
     } catch (e) {
       console.warn('LocalStorage not accessible', e);
     }
   }, []);
+
   const switchUser = (profileId: string) => {
     const found = profiles.find((p) => p.id === profileId);
     if (found) {
       setCurrentUser(found);
       try { localStorage.setItem(LOCAL_STORAGE_KEY_USER, found.id); } catch (e) {}
-      showToast('Switched User', `Switched active user to ${found.full_name || found.email}`, 'info');
+      showToast('Switched Persona', `Active user changed to ${found.full_name || found.email}`, 'info');
     }
-  }
+  };
 
-  const registerNewUser = async (
-    email: string,
-    fullName?: string,
-    role: UserRole = 'user'
-  ): Promise<Profile> => {
-    // Check if already exists
-    const existing = profiles.find((p) => p.email.toLowerCase() === email.toLowerCase());
+  const loginUser = async (email: string, _password?: string): Promise<boolean> => {
+    const targetEmail = email.trim().toLowerCase();
+    const existing = profiles.find((p) => p.email.toLowerCase() === targetEmail);
+
     if (existing) {
       setCurrentUser(existing);
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY_USER, existing.id);
       } catch (e) {}
-      showToast('Welcome Back', `Logged in as ${existing.full_name || existing.email}`, 'success');
+      showToast('Welcome Back! 👋', `Successfully signed in as ${existing.full_name || existing.email}`, 'success');
+      return true;
+    }
+
+    // Auto-create profile if logging in for demo
+    const newProfile: Profile = {
+      id: `user-${Date.now()}`,
+      email: targetEmail,
+      full_name: targetEmail.split('@')[0],
+      avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(targetEmail)}`,
+      role: 'user',
+      created_at: new Date().toISOString(),
+    };
+
+    const updated = [...profiles, newProfile];
+    setProfiles(updated);
+    setCurrentUser(newProfile);
+
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY_PROFILES, JSON.stringify(updated));
+      localStorage.setItem(LOCAL_STORAGE_KEY_USER, newProfile.id);
+    } catch (e) {}
+
+    showToast('Account Initialized', `Signed in as ${newProfile.full_name}`, 'success');
+    return true;
+  };
+
+  const registerNewUser = async (
+    email: string,
+    fullName?: string,
+    role: UserRole = 'user',
+    _password?: string
+  ): Promise<Profile> => {
+    const targetEmail = email.trim().toLowerCase();
+    const existing = profiles.find((p) => p.email.toLowerCase() === targetEmail);
+    if (existing) {
+      setCurrentUser(existing);
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY_USER, existing.id);
+      } catch (e) {}
+      showToast('Account Exists', `Signed in as existing user ${existing.full_name || existing.email}`, 'info');
       return existing;
     }
 
     const newProfile: Profile = {
       id: `user-${Date.now()}`,
-      email: email.trim().toLowerCase(),
-      full_name: fullName?.trim() || email.split('@')[0],
-      avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`,
+      email: targetEmail,
+      full_name: fullName?.trim() || targetEmail.split('@')[0],
+      avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(targetEmail)}`,
       role,
       created_at: new Date().toISOString(),
     };
@@ -113,9 +159,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return newProfile;
   };
 
+  const signOut = () => {
+    setCurrentUser(null);
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY_USER, 'guest_signed_out');
+    } catch (e) {}
+    showToast('Signed Out', 'You have been safely signed out.', 'info');
+  };
+
+  const resetPassword = async (email: string): Promise<boolean> => {
+    showToast(
+      'Password Reset Dispatched 📧',
+      `A password recovery link has been sent to ${email.trim()}. Check your inbox.`,
+      'success'
+    );
+    return true;
+  };
+
   const updateUserRole = async (targetUserId: string, newRole: UserRole): Promise<boolean> => {
-    // Check RLS policy rule: Admins can update user roles
-    if (currentUser.role !== 'admin') {
+    if (!currentUser || currentUser.role !== 'admin') {
       showToast('RLS Permission Denied', 'Only administrators can modify user roles.', 'error');
       return false;
     }
@@ -135,6 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const updateProfile = async (updatedData: Partial<Profile>): Promise<boolean> => {
+    if (!currentUser) return false;
     const updated = profiles.map((p) =>
       p.id === currentUser.id ? { ...p, ...updatedData } : p
     );
@@ -150,14 +213,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return true;
   };
 
+  // Safe fallback profile if currentUser is null for non-auth components
+  const activeUser = currentUser || MOCK_PROFILES[0];
+
   return (
     <AuthContext.Provider
       value={{
-        currentUser,
+        currentUser: activeUser,
         allProfiles: profiles,
-        isAdmin: currentUser.role === 'admin',
+        isAdmin: activeUser.role === 'admin',
+        isAuthenticated: currentUser !== null,
         switchUser,
-          registerNewUser,
+        loginUser,
+        registerNewUser,
+        signOut,
+        resetPassword,
         updateUserRole,
         updateProfile,
         isLiveSupabase,

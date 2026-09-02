@@ -110,8 +110,8 @@ export function AgendaView({
               {/* Appointments */}
               {dayAppointments.map((appt) => {
                 const apptParticipants = participants.filter((p) => p.appointment_id === appt.id);
-                const myParticipantRecord = apptParticipants.find((p) => p.user_id === currentUser.id);
-                const isCreator = appt.creator_id === currentUser.id;
+                const myParticipantRecord = apptParticipants.find((p) => p.user_id === currentUser?.id);
+                const isCreator = appt.creator_id === currentUser?.id;
                 const canReshare = isCreator || (myParticipantRecord && myParticipantRecord.can_reshare);
 
                 return (

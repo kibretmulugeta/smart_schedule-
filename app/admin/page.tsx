@@ -69,8 +69,8 @@ export default function AdminPage() {
             Row Level Security (RLS) Policy Notice
           </div>
           <p className="text-xs text-slate-300 leading-relaxed">
-            Your active persona (<span className="font-bold text-white">{currentUser.full_name}</span>) has role{' '}
-            <span className="font-mono text-amber-300 font-bold uppercase">{currentUser.role}</span>. As defined in the Supabase schema policy:{' '}
+            Your active persona (<span className="font-bold text-white">{currentUser?.full_name || 'Guest'}</span>) has role{' '}
+            <span className="font-mono text-amber-300 font-bold uppercase">{currentUser?.role || 'Guest'}</span>. As defined in the Supabase schema policy:{' '}
             <code className="px-1.5 py-0.5 bg-slate-900 text-amber-300 rounded font-mono text-[11px]">
               &quot;Admins can update user roles.&quot; on public.profiles for update using (exists (select 1 from public.profiles where id = auth.uid() and role = &apos;admin&apos;))
             </code>
@@ -138,7 +138,7 @@ export default function AdminPage() {
             </thead>
             <tbody className="divide-y divide-slate-800/60">
               {allProfiles.map((profile) => {
-                const isSelf = profile.id === currentUser.id;
+                const isSelf = profile.id === currentUser?.id;
                 return (
                   <tr key={profile.id} className="hover:bg-slate-800/30 transition-colors">
                     {/* User info */}

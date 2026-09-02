@@ -42,9 +42,9 @@ export default function AppointmentsPage() {
   const userAppointments = getUserAppointments();
 
   const filteredAppointments = userAppointments.filter((appt) => {
-    const isCreator = appt.creator_id === currentUser.id;
+    const isCreator = appt.creator_id === currentUser?.id;
     const participants = getAppointmentParticipants(appt.id);
-    const myRecord = participants.find((p) => p.user_id === currentUser.id);
+    const myRecord = participants.find((p) => p.user_id === currentUser?.id);
 
     if (activeFilter === 'created') return isCreator;
     if (activeFilter === 'invited') return !isCreator;
@@ -108,8 +108,8 @@ export default function AppointmentsPage() {
       <div className="space-y-4">
         {filteredAppointments.map((appt) => {
           const participants = getAppointmentParticipants(appt.id);
-          const isCreator = appt.creator_id === currentUser.id;
-          const myRecord = participants.find((p) => p.user_id === currentUser.id);
+          const isCreator = appt.creator_id === currentUser?.id;
+          const myRecord = participants.find((p) => p.user_id === currentUser?.id);
           const canReshare = isCreator || (myRecord && myRecord.can_reshare);
 
           return (
@@ -193,7 +193,7 @@ export default function AppointmentsPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                   {participants.map((p) => {
-                    const isSelf = p.user_id === currentUser.id;
+                    const isSelf = p.user_id === currentUser?.id;
                     return (
                       <div
                         key={p.id}

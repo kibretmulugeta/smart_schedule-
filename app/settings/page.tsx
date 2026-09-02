@@ -39,8 +39,8 @@ export default function SettingsPage() {
   const { showToast } = useToast();
 
   // Profile form
-  const [fullName, setFullName] = useState(currentUser.full_name || '');
-  const [avatarUrl, setAvatarUrl] = useState(currentUser.avatar_url || '');
+  const [fullName, setFullName] = useState(currentUser?.full_name || '');
+  const [avatarUrl, setAvatarUrl] = useState(currentUser?.avatar_url || '');
 
   // Category form
   const [newCatName, setNewCatName] = useState('');
@@ -142,7 +142,7 @@ create table public.profiles (
             />
             <Input
               label="Email Address"
-              value={currentUser.email}
+              value={currentUser?.email || ''}
               disabled
               helper="Email is bound to auth.users in Supabase"
             />
@@ -333,13 +333,14 @@ create table public.profiles (
           <div>
             <div className="text-xs font-bold text-cyan-200">Test Email Notification</div>
             <div className="text-[11px] text-slate-400">
-              Send a test HTML email payload to <span className="font-mono text-cyan-300">{currentUser.email}</span>.
+              Send a test HTML email payload to <span className="font-mono text-cyan-300">{currentUser?.email || 'Guest'}</span>.
             </div>
           </div>
           <Button
             size="sm"
             variant="secondary"
             onClick={async () => {
+              if (!currentUser?.email) return;
               try {
                 const res = await fetch('/api/notifications/email', {
                   method: 'POST',

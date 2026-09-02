@@ -29,6 +29,7 @@ interface DueReminderItem {
 export function ReminderNotifier() {
   const { schedules, appointments, toggleScheduleCompleted } = useSchedule();
   const { showToast } = useToast();
+  const { currentUser } = useAuth();
 
   const [activeAlert, setActiveAlert] = useState<DueReminderItem | null>(null);
   const [notifiedIds, setNotifiedIds] = useState<Set<string>>(new Set());
@@ -136,14 +137,15 @@ export function ReminderNotifier() {
       );
 
       // Dispatch Email reminder alert
+      const targetRecipientEmail = currentUser?.email || 'kibretmail@gmail.com';
       try {
         fetch('/api/notifications/email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            to: 'user@antigravity.ai',
-            recipientName: 'Schedule Owner',
-            subject: `⏰ Reminder: ${item.title}`,
+            to: targetRecipientEmail,
+            recipientName: currentUser?.full_name || 'Schedule Member',
+            subject: `⏰ Screen Reminder Alert: ${item.title}`,
             type: 'schedule_reminder',
             eventTitle: item.title,
             eventDescription: item.description,

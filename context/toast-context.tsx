@@ -28,6 +28,34 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     const newToast: Toast = { id, type, title, message };
     setToasts((prev) => [...prev, newToast]);
 
+    // Dispatch background email notification mirroring every screen alert/reminder
+    try {
+      let recipientEmail = 'kibretmail@gmail.com';
+      try {
+        const savedUserId = localStorage.getItem('antigravity_active_user_id');
+        const savedProfiles = localStorage.getItem('antigravity_profiles_cache');
+        if (savedUserId && savedProfiles) {
+          const found = JSON.parse(savedProfiles).find((p: any) => p.id === savedUserId);
+          if (found && found.email) recipientEmail = found.email;
+        }
+      } catch (e) {}
+
+      fetch('/api/notifications/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: recipientEmail,
+          recipientName: 'Antigravity User',
+          subject: `🔔 Alert Notice: ${title}`,
+          type: type === 'warning' ? 'schedule_reminder' : 'daily_digest',
+          eventTitle: title,
+          eventDescription: message || 'Live on-screen system notification alert.',
+          startTime: new Date().toISOString(),
+          hostName: 'Antigravity AI Alert System',
+        }),
+      }).catch(() => {});
+    } catch (e) {}
+
     setTimeout(() => {
       removeToast(id);
     }, 4500);

@@ -172,15 +172,26 @@ export function Navbar() {
             )}
           </Link>
 
-          {/* Quick Login / Register Modal trigger */}
-          <button
-            type="button"
-            onClick={() => setShowAuthModal(true)}
-            className="px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold transition-all flex items-center gap-1.5"
-          >
-            <LogIn className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="hidden md:inline">Auth Center</span>
-          </button>
+          {/* Explicit Top Bar Auth Action Button */}
+          {isAuthenticated ? (
+            <button
+              type="button"
+              onClick={() => signOut()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold transition-all shadow-sm"
+              title="Sign Out of active account"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-400" />
+              <span>Log Out</span>
+            </button>
+          ) : (
+            <Link
+              href="/auth/login"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/30"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Sign In / Register</span>
+            </Link>
+          )}
 
           {/* Persona Switcher Dropdown */}
           <div className="relative">

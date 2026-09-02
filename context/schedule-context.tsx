@@ -121,6 +121,8 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     } catch (e) {}
   };
 
+  const activeUser = currentUser || MOCK_PROFILES[0];
+
   // --- SCHEDULE OPERATIONS ---
   const createSchedule = async (
     scheduleData: Omit<Schedule, 'id' | 'created_at' | 'user_id'>
@@ -128,7 +130,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     const newSchedule: Schedule = {
       ...scheduleData,
       id: `sched-${Date.now()}`,
-      user_id: currentUser.id,
+      user_id: activeUser.id,
       created_at: new Date().toISOString(),
       category: categories.find((c) => c.id === scheduleData.category_id) || null,
     };
@@ -198,37 +200,37 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     const newAppointment: Appointment = {
       ...appointmentData,
       id: newApptId,
-      creator_id: currentUser.id,
+      creator_id: activeUser.id,
       created_at: new Date().toISOString(),
-      creator: currentUser,
+      creator: activeUser,
     };
 
     // Auto-add creator as accepted participant
     const creatorParticipant: AppointmentParticipantWithProfile = {
       id: `part-${Date.now()}-creator`,
       appointment_id: newApptId,
-      user_id: currentUser.id,
-      invited_by: currentUser.id,
+      user_id: activeUser.id,
+      invited_by: activeUser.id,
       status: 'accepted',
       can_reshare: true,
       created_at: new Date().toISOString(),
-      profile: currentUser,
+      profile: activeUser,
     };
 
     const invitedParticipants: AppointmentParticipantWithProfile[] = initialParticipantIds
-      .filter((p) => p.userId !== currentUser.id)
+      .filter((p) => p.userId !== activeUser.id)
       .map((p, idx) => {
         const profile = allProfiles.find((pr) => pr.id === p.userId) || null;
         return {
           id: `part-${Date.now()}-${idx}`,
           appointment_id: newApptId,
           user_id: p.userId,
-          invited_by: currentUser.id,
+          invited_by: activeUser.id,
           status: 'pending',
           can_reshare: p.canReshare,
           created_at: new Date().toISOString(),
           profile,
-          invited_by_profile: currentUser,
+          invited_by_profile: activeUser,
         };
       });
 
@@ -251,7 +253,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
               eventDescription: newAppointment.description,
               startTime: newAppointment.start_time,
               endTime: newAppointment.end_time,
-              hostName: currentUser.full_name || 'Meeting Host',
+              hostName: activeUser.full_name || 'Meeting Host',
             }),
           });
         } catch (e) {}
@@ -271,7 +273,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
 
   const deleteAppointment = async (id: string): Promise<boolean> => {
     const target = appointments.find((a) => a.id === id);
-    if (target && target.creator_id !== currentUser.id && currentUser.role !== 'admin') {
+    if (target && target.creator_id !== activeUser.id && activeUser.role !== 'admin') {
       showToast('RLS Permission Denied', 'Only the appointment creator can cancel this meeting.', 'error');
       return false;
     }
@@ -287,7 +289,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     status: ParticipantStatus
   ): Promise<boolean> => {
     const existing = participants.find(
-      (p) => p.appointment_id === appointmentId && p.user_id === currentUser.id
+      (p) => p.appointment_id === appointmentId && p.user_id === activeUser.id
     );
 
     if (!existing) {
@@ -296,7 +298,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     }
 
     const updated = participants.map((p) =>
-      p.appointment_id === appointmentId && p.user_id === currentUser.id
+      p.appointment_id === appointmentId && p.user_id === activeUser.id
         ? { ...p, status }
         : p
     );
@@ -311,18 +313,17 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     targetUserId: string,
     canReshare: boolean
   ): Promise<boolean> => {
-    // Check RLS rule: must be creator OR participant with can_reshare = true
     const appt = appointments.find((a) => a.id === appointmentId);
     if (!appt) return false;
 
     const myParticipantRecord = participants.find(
-      (p) => p.appointment_id === appointmentId && p.user_id === currentUser.id
+      (p) => p.appointment_id === appointmentId && p.user_id === activeUser.id
     );
 
-    const isCreator = appt.creator_id === currentUser.id;
+    const isCreator = appt.creator_id === activeUser.id;
     const canForward = isCreator || (myParticipantRecord && myParticipantRecord.can_reshare);
 
-    if (!canForward && currentUser.role !== 'admin') {
+    if (!canForward && activeUser.role !== 'admin') {
       showToast(
         'RLS Policy Blocked',
         'You do not have permission (can_reshare=false) to invite others to this appointment.',
@@ -331,7 +332,6 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
-    // Check if already invited
     const alreadyInvited = participants.some(
       (p) => p.appointment_id === appointmentId && p.user_id === targetUserId
     );
@@ -346,17 +346,16 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
       id: `part-${Date.now()}-fwd`,
       appointment_id: appointmentId,
       user_id: targetUserId,
-      invited_by: currentUser.id,
+      invited_by: activeUser.id,
       status: 'pending',
       can_reshare: canReshare,
       created_at: new Date().toISOString(),
       profile: targetProfile,
-      invited_by_profile: currentUser,
+      invited_by_profile: activeUser,
     };
 
     saveParticipants([...participants, newParticipant]);
 
-    // Dispatch forwarded email notification
     if (targetProfile?.email) {
       try {
         await fetch('/api/notifications/email', {
@@ -371,7 +370,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
             eventDescription: appt.description,
             startTime: appt.start_time,
             endTime: appt.end_time,
-            hostName: currentUser.full_name || 'A Colleague',
+            hostName: activeUser.full_name || 'A Colleague',
           }),
         });
       } catch (e) {}
@@ -381,11 +380,10 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     return true;
   };
 
-  // --- CATEGORIES OPERATIONS ---
   const createCategory = async (name: string, color: string): Promise<Category> => {
     const newCat: Category = {
       id: `cat-${Date.now()}`,
-      user_id: currentUser.id,
+      user_id: activeUser.id,
       name,
       color,
       is_default: false,
@@ -409,15 +407,12 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     return true;
   };
 
-  // --- GETTERS ---
-  // According to RLS policy:
-  // "View appointments if participant or creator."
   const getUserAppointments = (): Appointment[] => {
     return appointments.filter((appt) => {
-      if (currentUser.role === 'admin') return true;
-      if (appt.creator_id === currentUser.id) return true;
+      if (activeUser.role === 'admin') return true;
+      if (appt.creator_id === activeUser.id) return true;
       return participants.some(
-        (p) => p.appointment_id === appt.id && p.user_id === currentUser.id
+        (p) => p.appointment_id === appt.id && p.user_id === activeUser.id
       );
     });
   };
@@ -429,7 +424,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
   return (
     <ScheduleContext.Provider
       value={{
-        schedules: schedules.filter((s) => currentUser.role === 'admin' || s.user_id === currentUser.id),
+        schedules: schedules.filter((s) => activeUser.role === 'admin' || s.user_id === activeUser.id),
         appointments,
         participants,
         categories,

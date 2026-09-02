@@ -16,11 +16,13 @@ import {
   CheckCircle2,
   Database,
   Lock,
+  LogOut,
+  LogIn,
 } from 'lucide-react';
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { currentUser, isAdmin } = useAuth();
+  const { currentUser, isAdmin, isAuthenticated, signOut } = useAuth();
   const { schedules, appointments, categories } = useSchedule();
 
   const activeSchedulesCount = schedules.length;
@@ -144,18 +146,34 @@ export function Sidebar() {
         </p>
       </div>
 
-      {/* PostgreSQL & Supabase Status Badge */}
-      <div className="mt-auto pt-4 border-t border-slate-800/80 space-y-2">
-        <div className="flex items-center justify-between text-[11px] text-slate-400">
+      {/* PostgreSQL & Supabase Status + Direct Log Out Action */}
+      <div className="mt-auto pt-4 border-t border-slate-800/80 space-y-3">
+        {isAuthenticated ? (
+          <button
+            type="button"
+            onClick={() => signOut()}
+            className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-bold transition-all"
+          >
+            <LogOut className="w-4 h-4 text-rose-400" />
+            <span>Sign Out Session</span>
+          </button>
+        ) : (
+          <Link
+            href="/auth/login"
+            className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/30"
+          >
+            <LogIn className="w-4 h-4" />
+            <span>Sign In / Register</span>
+          </Link>
+        )}
+
+        <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
           <span className="flex items-center gap-1.5 font-medium">
             <Database className="w-3.5 h-3.5 text-emerald-400" /> PostgreSQL 16
           </span>
           <span className="flex items-center gap-1 text-emerald-400 font-bold">
             <Lock className="w-2.5 h-2.5" /> RLS Strict
           </span>
-        </div>
-        <div className="text-[10px] text-slate-400 font-mono">
-          14 Frequency Types Engine
         </div>
       </div>
     </aside>

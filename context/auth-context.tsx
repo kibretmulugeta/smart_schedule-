@@ -213,15 +213,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return true;
   };
 
-  // Safe fallback profile if currentUser is null for non-auth components
-  const activeUser = currentUser || MOCK_PROFILES[0];
-
   return (
     <AuthContext.Provider
       value={{
-        currentUser: activeUser,
+        currentUser,
         allProfiles: profiles,
-        isAdmin: activeUser.role === 'admin',
+        isAdmin: currentUser?.role === 'admin',
         isAuthenticated: currentUser !== null,
         switchUser,
         loginUser,

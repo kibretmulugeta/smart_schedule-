@@ -59,7 +59,7 @@ export function ForwardModal({ isOpen, onClose, appointment }: ForwardModalProps
             <span className="font-semibold text-white">Event:</span> {appointment.title}
           </p>
           <p className="text-[11px] text-slate-400 mt-1">
-            Secondary invitations will be logged with your attribution (<span className="text-indigo-400 font-medium">Invited by {currentUser.full_name}</span>) as per Row Level Security policies.
+            Secondary invitations will be logged with your attribution (<span className="text-indigo-400 font-medium">Invited by {currentUser?.full_name || 'Host'}</span>) as per Row Level Security policies.
           </p>
         </div>
 

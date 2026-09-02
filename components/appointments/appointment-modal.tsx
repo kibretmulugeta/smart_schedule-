@@ -50,7 +50,7 @@ export function AppointmentModal({
       setEndDateTime(formatToDateTimeLocal(end));
       // Pre-select other team members
       const others = allProfiles
-        .filter((p) => p.id !== currentUser.id)
+        .filter((p) => p.id !== currentUser?.id)
         .slice(0, 2)
         .map((p) => ({ userId: p.id, canReshare: true }));
       setSelectedParticipants(others);
@@ -238,7 +238,7 @@ export function AppointmentModal({
 
             <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
               {allProfiles
-                .filter((p) => p.id !== currentUser.id)
+                .filter((p) => p.id !== currentUser?.id)
                 .map((profile) => {
                   const isSelected = selectedParticipants.some((p) => p.userId === profile.id);
                   const participantData = selectedParticipants.find((p) => p.userId === profile.id);

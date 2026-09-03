@@ -283,6 +283,20 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
             }
           } catch (e) {}
         }
+
+        // C. Dispatch real background Web Push to all registered mobile devices
+        try {
+          fetch('/api/notifications/push/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: params.title,
+              message: params.message,
+              url: window.location.origin,
+              eventId: params.eventId,
+            }),
+          }).catch(() => {});
+        } catch (e) {}
       }
 
       // 4. Save to persistent notification history

@@ -5,6 +5,7 @@ import { useNotification, NotificationItem } from '@/context/notification-contex
 import { useAuth } from '@/context/auth-context';
 import { useSchedule } from '@/context/schedule-context';
 import { EmailPreviewModal } from './email-preview-modal';
+import { LockScreenPushBanner } from './lock-screen-push-banner';
 import {
   Bell,
   BellRing,
@@ -215,6 +216,9 @@ export function NotificationCenter() {
 
             {/* Notification Items List */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+              {/* Phone Lock-Screen Push Activation Banner */}
+              <LockScreenPushBanner />
+
               {filteredNotifications.map((notif) => {
                 let timeAgo = 'Just now';
                 try {

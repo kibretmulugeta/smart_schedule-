@@ -9,6 +9,39 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// Handle Background Push Events from Web Push (FCM / APNs) when phone screen is locked
+self.addEventListener('push', (event) => {
+  let data = {};
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data = { title: '⏰ Antigravity AI Alert', message: event.data.text() };
+    }
+  }
+
+  const title = data.title || '⏰ Antigravity AI Lock-Screen Reminder';
+  const options = {
+    body: data.message || 'You have an active schedule alert or meeting.',
+    icon: '/favicon.ico',
+    badge: '/favicon.ico',
+    vibrate: [400, 150, 400, 150, 600],
+    requireInteraction: true,
+    renotify: true,
+    tag: `push-alert-${data.eventId || Date.now()}`,
+    data: {
+      url: data.url || '/',
+      eventId: data.eventId,
+    },
+    actions: [
+      { action: 'view', title: 'Open Calendar' },
+      { action: 'dismiss', title: 'Dismiss' },
+    ],
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
 // Listen for message from main window to fire high-priority lock-screen notification
 self.addEventListener('message', (event) => {
   const data = event.data;

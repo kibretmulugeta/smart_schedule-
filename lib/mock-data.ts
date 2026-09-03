@@ -10,6 +10,14 @@ export const MOCK_PROFILES: Profile[] = [
     created_at: '2026-01-01T08:00:00Z',
   },
   {
+    id: 'user-adwaat',
+    email: 'adwaat1888@gmail.com',
+    full_name: 'Adwaat (Verified Recipient)',
+    avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+    role: 'admin',
+    created_at: '2026-01-01T08:00:00Z',
+  },
+  {
     id: 'user-admin-001',
     email: 'alex.vance@antigravity.ai',
     full_name: 'Alex Vance (Architect)',

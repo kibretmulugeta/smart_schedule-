@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { ToastProvider } from '@/context/toast-context';
+import { NotificationProvider } from '@/context/notification-context';
 import { AuthProvider } from '@/context/auth-context';
 import { ScheduleProvider } from '@/context/schedule-context';
 import { AppShell } from '@/components/layout/app-shell';
@@ -21,12 +22,14 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className="bg-slate-950 text-slate-100 antialiased min-h-screen">
         <ToastProvider>
-          <AuthProvider>
-            <ScheduleProvider>
-              <AppShell>{children}</AppShell>
-              <ReminderNotifier />
-            </ScheduleProvider>
-          </AuthProvider>
+          <NotificationProvider>
+            <AuthProvider>
+              <ScheduleProvider>
+                <AppShell>{children}</AppShell>
+                <ReminderNotifier />
+              </ScheduleProvider>
+            </AuthProvider>
+          </NotificationProvider>
         </ToastProvider>
       </body>
     </html>

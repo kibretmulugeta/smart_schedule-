@@ -306,13 +306,21 @@ export function AppointmentModal({
           </div>
         )}
 
+        {/* Instant Notification Guarantee Badge */}
+        <div className="p-3 bg-indigo-950/30 border border-indigo-500/20 rounded-xl flex items-center gap-2 text-xs text-indigo-300">
+          <Sparkles className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+          <span>
+            <strong>Instant Dual-Channel Dispatch:</strong> An email confirmation with attendee roster is dispatched to you ({currentUser?.email}), and individual invitation emails are sent to each invited colleague immediately.
+          </span>
+        </div>
+
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button type="submit" variant="primary">
-            {initialAppointment ? 'Update Appointment' : 'Send Invitations'}
+            {initialAppointment ? 'Update Appointment' : 'Send Invitations & Dispatch Emails'}
           </Button>
         </div>
       </form>

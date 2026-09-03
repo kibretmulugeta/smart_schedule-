@@ -463,6 +463,14 @@ export function ScheduleModal({
           </div>
         </div>
 
+        {/* Dual-Channel Notice */}
+        <div className="p-3 bg-slate-950/60 border border-slate-800 rounded-xl flex items-center gap-2 text-xs text-slate-400">
+          <Sparkles className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+          <span>
+            <strong>Instant Dual-Channel Active:</strong> Saving this schedule will dispatch an email confirmation to your inbox and sound an on-screen chime and modal alert whenever this routine is due.
+          </span>
+        </div>
+
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
           <Button type="button" variant="secondary" onClick={onClose}>

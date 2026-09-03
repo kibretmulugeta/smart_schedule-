@@ -12,6 +12,7 @@ import {
 import { MOCK_SCHEDULES, MOCK_APPOINTMENTS, MOCK_PARTICIPANTS, MOCK_CATEGORIES, MOCK_PROFILES } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
 import { useToast } from './toast-context';
+import { useNotification } from './notification-context';
 import confetti from 'canvas-confetti';
 
 interface ScheduleContextType {
@@ -64,6 +65,7 @@ const STORAGE_KEYS = {
 export function ScheduleProvider({ children }: { children: ReactNode }) {
   const { currentUser, allProfiles } = useAuth();
   const { showToast } = useToast();
+  const { dispatchDualNotification } = useNotification();
 
   const [schedules, setSchedules] = useState<Schedule[]>(MOCK_SCHEDULES);
   const [appointments, setAppointments] = useState<Appointment[]>(MOCK_APPOINTMENTS);
@@ -75,7 +77,9 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
   const [frequencyFilter, setFrequencyFilter] = useState<FrequencyType | 'all'>('all');
 
   // Load from local storage
+  // Sync with Server Database API
   useEffect(() => {
+    // 1. Initial hydrate from local storage for zero latency
     try {
       const storedSched = localStorage.getItem(STORAGE_KEYS.SCHEDULES);
       if (storedSched) setSchedules(JSON.parse(storedSched));
@@ -88,9 +92,49 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
 
       const storedCats = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
       if (storedCats) setCategories(JSON.parse(storedCats));
-    } catch (e) {
-      console.warn('Storage sync issue', e);
-    }
+    } catch (e) {}
+
+    // 2. Fetch authoritative state from Server Database
+    const fetchFromServerDb = async () => {
+      try {
+        const [schedRes, apptRes] = await Promise.all([
+          fetch('/api/schedules'),
+          fetch('/api/appointments'),
+        ]);
+
+        if (schedRes.ok) {
+          const sJson = await schedRes.json();
+          if (sJson.data && Array.isArray(sJson.data) && sJson.data.length > 0) {
+            setSchedules(sJson.data);
+            try {
+              localStorage.setItem(STORAGE_KEYS.SCHEDULES, JSON.stringify(sJson.data));
+            } catch (e) {}
+          }
+        }
+
+        if (apptRes.ok) {
+          const aJson = await apptRes.json();
+          if (aJson.data) {
+            if (Array.isArray(aJson.data.appointments)) {
+              setAppointments(aJson.data.appointments);
+              try {
+                localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(aJson.data.appointments));
+              } catch (e) {}
+            }
+            if (Array.isArray(aJson.data.participants)) {
+              setParticipants(aJson.data.participants);
+              try {
+                localStorage.setItem(STORAGE_KEYS.PARTICIPANTS, JSON.stringify(aJson.data.participants));
+              } catch (e) {}
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Server database sync error:', err);
+      }
+    };
+
+    fetchFromServerDb();
   }, []);
 
   const saveSchedules = (items: Schedule[]) => {
@@ -137,7 +181,46 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
 
     const updated = [newSchedule, ...schedules];
     saveSchedules(updated);
-    showToast('Schedule Created', `"${newSchedule.title}" recurring event was added.`, 'success');
+
+    // Persist to Server Database
+    try {
+      fetch('/api/schedules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSchedule),
+      }).catch(() => {});
+    } catch (e) {}
+
+    // Dispatch immediate dual notification: Screen + Creator Email
+    if (activeUser.email) {
+      await dispatchDualNotification({
+        category: 'schedule_created',
+        title: `📅 Schedule Added: ${newSchedule.title}`,
+        message: `Recurring schedule added to calendar and email confirmation sent to ${activeUser.email}.`,
+        targetUserId: activeUser.id,
+        recipientEmail: activeUser.email,
+        recipientName: activeUser.full_name || 'Schedule Creator',
+        emailPayload: {
+          to: activeUser.email,
+          recipientName: activeUser.full_name || 'Schedule Creator',
+          subject: `📅 Schedule Created: ${newSchedule.title}`,
+          type: 'schedule_created',
+          eventTitle: newSchedule.title,
+          eventDescription: newSchedule.description,
+          startTime: newSchedule.start_time,
+          endTime: newSchedule.end_time,
+          hostName: activeUser.full_name || 'You',
+          hostEmail: activeUser.email,
+        },
+        showToastAlert: true,
+        playChime: true,
+        eventId: newSchedule.id,
+        eventTime: newSchedule.start_time,
+      });
+    } else {
+      showToast('Schedule Created', `"${newSchedule.title}" recurring event was added.`, 'success');
+    }
+
     return newSchedule;
   };
 
@@ -237,30 +320,94 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     saveAppointments([newAppointment, ...appointments]);
     saveParticipants([...participants, creatorParticipant, ...invitedParticipants]);
 
-    // Dispatch email notifications to all invited participants asynchronously
-    invitedParticipants.forEach(async (p) => {
-      if (p.profile?.email) {
-        try {
-          await fetch('/api/notifications/email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: p.profile.email,
-              recipientName: p.profile.full_name || 'Team Member',
-              subject: `📅 Invitation: ${newAppointment.title}`,
-              type: 'appointment_invite',
-              eventTitle: newAppointment.title,
-              eventDescription: newAppointment.description,
-              startTime: newAppointment.start_time,
-              endTime: newAppointment.end_time,
-              hostName: activeUser.full_name || 'Meeting Host',
-            }),
-          });
-        } catch (e) {}
-      }
-    });
+    // Persist to Server Database API
+    try {
+      fetch('/api/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newAppointment,
+          participantUserIds: initialParticipantIds.map((p) => p.userId),
+        }),
+      }).catch(() => {});
+    } catch (e) {}
 
-    showToast('Appointment Scheduled', `Invited ${invitedParticipants.length} participant(s) & dispatched email notices.`, 'success');
+    // Roster of attendees for rich email representation
+    const attendeesRoster = [
+      {
+        name: `${activeUser.full_name || 'Meeting Host'} (Host)`,
+        email: activeUser.email,
+        status: 'accepted',
+      },
+      ...invitedParticipants.map((p) => ({
+        name: p.profile?.full_name || 'Invited Teammate',
+        email: p.profile?.email || 'unspecified',
+        status: p.status,
+      })),
+    ];
+
+    // 1. IMMEDIATELY NOTIFY MEETING CREATOR via their own email AND screen
+    if (activeUser.email) {
+      await dispatchDualNotification({
+        category: 'meeting_created',
+        title: `✅ Meeting Confirmed: ${newAppointment.title}`,
+        message: `Successfully scheduled with ${invitedParticipants.length} invited attendee(s). Confirmation dispatched to your email (${activeUser.email}).`,
+        targetUserId: activeUser.id,
+        recipientEmail: activeUser.email,
+        recipientName: activeUser.full_name || 'Meeting Host',
+        emailPayload: {
+          to: activeUser.email,
+          recipientName: activeUser.full_name || 'Meeting Host',
+          subject: `✅ Meeting Scheduled: ${newAppointment.title}`,
+          type: 'meeting_created_creator',
+          eventTitle: newAppointment.title,
+          eventDescription: newAppointment.description,
+          startTime: newAppointment.start_time,
+          endTime: newAppointment.end_time,
+          hostName: activeUser.full_name || 'Meeting Host',
+          hostEmail: activeUser.email,
+          attendees: attendeesRoster,
+        },
+        showToastAlert: true,
+        playChime: true,
+        eventId: newApptId,
+        eventTime: newAppointment.start_time,
+        hostName: activeUser.full_name || 'Meeting Host',
+      });
+    }
+
+    // 2. IMMEDIATELY NOTIFY EACH INVITED USER via their own email AND screen
+    for (const p of invitedParticipants) {
+      if (p.profile?.email) {
+        await dispatchDualNotification({
+          category: 'appointment_invite',
+          title: `📅 Meeting Invitation: ${newAppointment.title}`,
+          message: `${activeUser.full_name || 'A colleague'} invited you to "${newAppointment.title}".`,
+          targetUserId: p.user_id,
+          recipientEmail: p.profile.email,
+          recipientName: p.profile.full_name || 'Team Member',
+          emailPayload: {
+            to: p.profile.email,
+            recipientName: p.profile.full_name || 'Team Member',
+            subject: `📅 Invitation: ${newAppointment.title}`,
+            type: 'appointment_invite',
+            eventTitle: newAppointment.title,
+            eventDescription: newAppointment.description,
+            startTime: newAppointment.start_time,
+            endTime: newAppointment.end_time,
+            hostName: activeUser.full_name || 'Meeting Host',
+            hostEmail: activeUser.email,
+            attendees: attendeesRoster,
+          },
+          showToastAlert: false, // keep creator's active screen clean while saving to recipient's notifications
+          playChime: false,
+          eventId: newApptId,
+          eventTime: newAppointment.start_time,
+          hostName: activeUser.full_name || 'Meeting Host',
+        });
+      }
+    }
+
     return newAppointment;
   };
 
@@ -304,7 +451,53 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     );
 
     saveParticipants(updated);
+
+    // Persist RSVP to Server Database
+    try {
+      fetch('/api/appointments', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'rsvp',
+          appointmentId,
+          userId: activeUser.id,
+          status,
+        }),
+      }).catch(() => {});
+    } catch (e) {}
+
+    const appt = appointments.find((a) => a.id === appointmentId);
+    const host = allProfiles.find((pr) => pr.id === appt?.creator_id);
+
     showToast('RSVP Sent', `Response recorded as ${status.toUpperCase()}.`, 'success');
+
+    // Notify meeting creator immediately via email & screen
+    if (host?.email && host.id !== activeUser.id) {
+      await dispatchDualNotification({
+        category: 'rsvp_update',
+        title: `📬 RSVP: ${activeUser.full_name || activeUser.email} [${status.toUpperCase()}]`,
+        message: `${activeUser.full_name || activeUser.email} has ${status} your meeting "${appt?.title}".`,
+        targetUserId: host.id,
+        recipientEmail: host.email,
+        recipientName: host.full_name || 'Meeting Host',
+        emailPayload: {
+          to: host.email,
+          recipientName: host.full_name || 'Meeting Host',
+          subject: `📬 RSVP: ${activeUser.full_name || activeUser.email} [${status.toUpperCase()}] to "${appt?.title}"`,
+          type: 'rsvp_update',
+          eventTitle: appt?.title || 'Scheduled Meeting',
+          rsvpStatus: status,
+          startTime: appt?.start_time || new Date().toISOString(),
+          endTime: appt?.end_time,
+          hostName: activeUser.full_name || 'Invitee',
+          hostEmail: activeUser.email,
+        },
+        showToastAlert: true,
+        playChime: true,
+        eventId: appointmentId,
+      });
+    }
+
     return true;
   };
 
@@ -356,27 +549,73 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
 
     saveParticipants([...participants, newParticipant]);
 
+    // Persist Forwarded Participant to Server Database
+    try {
+      fetch('/api/appointments', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'forward',
+          appointmentId,
+          targetUserId,
+          inviterId: activeUser.id,
+          canReshare,
+        }),
+      }).catch(() => {});
+    } catch (e) {}
+
+    // Dispatch email to target user immediately
     if (targetProfile?.email) {
-      try {
-        await fetch('/api/notifications/email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: targetProfile.email,
-            recipientName: targetProfile.full_name || 'Team Member',
-            subject: `↪️ Forwarded Meeting: ${appt.title}`,
-            type: 'forward_invite',
-            eventTitle: appt.title,
-            eventDescription: appt.description,
-            startTime: appt.start_time,
-            endTime: appt.end_time,
-            hostName: activeUser.full_name || 'A Colleague',
-          }),
-        });
-      } catch (e) {}
+      await dispatchDualNotification({
+        category: 'forward_invite',
+        title: `↪️ Forwarded Meeting: ${appt.title}`,
+        message: `${activeUser.full_name || 'A colleague'} forwarded this meeting invitation to you.`,
+        targetUserId: targetUserId,
+        recipientEmail: targetProfile.email,
+        recipientName: targetProfile.full_name || 'Team Member',
+        emailPayload: {
+          to: targetProfile.email,
+          recipientName: targetProfile.full_name || 'Team Member',
+          subject: `↪️ Forwarded Meeting: ${appt.title}`,
+          type: 'forward_invite',
+          eventTitle: appt.title,
+          eventDescription: appt.description,
+          startTime: appt.start_time,
+          endTime: appt.end_time,
+          hostName: activeUser.full_name || 'A Colleague',
+          hostEmail: activeUser.email,
+        },
+        showToastAlert: false,
+        playChime: false,
+        eventId: appointmentId,
+        eventTime: appt.start_time,
+      });
     }
 
-    showToast('Invitation Forwarded', `Forwarded appointment invite & dispatched email notice to ${targetProfile?.full_name || 'user'}.`, 'success');
+    // Dispatch confirmation to forwarder
+    await dispatchDualNotification({
+      category: 'forward_invite',
+      title: 'Invitation Forwarded',
+      message: `Forwarded meeting invite to ${targetProfile?.full_name || targetProfile?.email} and dispatched email notice.`,
+      targetUserId: activeUser.id,
+      recipientEmail: activeUser.email,
+      recipientName: activeUser.full_name || 'You',
+      emailPayload: {
+        to: activeUser.email,
+        recipientName: activeUser.full_name || 'You',
+        subject: `↪️ Forward Confirmation: ${appt.title}`,
+        type: 'forward_invite',
+        eventTitle: appt.title,
+        eventDescription: `You forwarded this meeting invitation to ${targetProfile?.full_name || targetProfile?.email}.`,
+        startTime: appt.start_time,
+        endTime: appt.end_time,
+        hostName: activeUser.full_name || 'You',
+        hostEmail: activeUser.email,
+      },
+      showToastAlert: true,
+      playChime: true,
+    });
+
     return true;
   };
 

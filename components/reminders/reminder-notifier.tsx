@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useSchedule } from '@/context/schedule-context';
 import { useToast } from '@/context/toast-context';
 import { useAuth } from '@/context/auth-context';
+import { useNotification } from '@/context/notification-context';
 import { Schedule, Appointment } from '@/types/database.types';
 import {
   BellRing,
@@ -25,12 +26,14 @@ interface DueReminderItem {
   startTime: Date;
   type: 'schedule' | 'appointment';
   categoryColor?: string;
+  attendeesCount?: number;
 }
 
 export function ReminderNotifier() {
-  const { schedules, appointments, toggleScheduleCompleted } = useSchedule();
+  const { schedules, appointments, participants, toggleScheduleCompleted } = useSchedule();
   const { showToast } = useToast();
-  const { currentUser } = useAuth();
+  const { currentUser, allProfiles } = useAuth();
+  const { soundEnabled, playChimeSound, dispatchDualNotification } = useNotification();
 
   const [activeAlert, setActiveAlert] = useState<DueReminderItem | null>(null);
   const [notifiedIds, setNotifiedIds] = useState<Set<string>>(new Set());
@@ -44,55 +47,153 @@ export function ReminderNotifier() {
     }
   }, []);
 
-  // Audio chime synthesizer using Web Audio API
-  const playChimeSound = () => {
+  // Listen for custom trigger-test-reminder event
+  useEffect(() => {
+    const handleCustomTest = (e: any) => {
+      const detail = e.detail || {};
+      const testItem: DueReminderItem = {
+        id: `test-${Date.now()}`,
+        title: detail.title || 'Antigravity AI Dual-Channel Sync Alert',
+        description: detail.description || 'Live screen reminder and verified email dispatch test alert.',
+        startTime: new Date(),
+        type: detail.type || 'appointment',
+        categoryColor: '#6366F1',
+        attendeesCount: detail.attendeesCount || 3,
+      };
+      triggerAlert(testItem);
+    };
+
+    window.addEventListener('trigger-test-reminder', handleCustomTest);
+    return () => window.removeEventListener('trigger-test-reminder', handleCustomTest);
+  }, [currentUser, allProfiles]);
+
+  const triggerAlert = async (item: DueReminderItem) => {
+    setActiveAlert(item);
+    playChimeSound();
+
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.35 },
+        colors: ['#6366F1', '#EC4899', '#F59E0B', '#10B981'],
+      });
+    } catch (e) {}
 
-      // Play dual chime (frequency 587.33 Hz (D5) -> 880 Hz (A5))
-      const osc1 = ctx.createOscillator();
-      const gain1 = ctx.createGain();
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(587.33, ctx.currentTime);
-      gain1.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
-      osc1.connect(gain1);
-      gain1.connect(ctx.destination);
-      osc1.start();
-      osc1.stop(ctx.currentTime + 0.6);
+    // 1. If it is an appointment: Notify meeting creator AND all invited participants via email
+    if (item.type === 'appointment') {
+      const targetAppt = appointments.find((a) => a.id === item.id);
+      const apptParticipants = participants.filter((p) => p.appointment_id === item.id);
+      const host = allProfiles.find((pr) => pr.id === targetAppt?.creator_id) || currentUser;
 
-      const osc2 = ctx.createOscillator();
-      const gain2 = ctx.createGain();
-      osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(880, ctx.currentTime + 0.2);
-      gain2.gain.setValueAtTime(0.4, ctx.currentTime + 0.2);
-      gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.9);
-      osc2.connect(gain2);
-      gain2.connect(ctx.destination);
-      osc2.start(ctx.currentTime + 0.2);
-      osc2.stop(ctx.currentTime + 0.9);
-    } catch (e) {
-      console.warn('Audio chime issue', e);
+      // Email list: Host + participants
+      const recipients: { name: string; email: string; isHost?: boolean }[] = [];
+      if (host?.email) {
+        recipients.push({
+          name: host.full_name || 'Meeting Host',
+          email: host.email,
+          isHost: true,
+        });
+      }
+
+      apptParticipants.forEach((p) => {
+        if (p.profile?.email && !recipients.some((r) => r.email === p.profile!.email)) {
+          recipients.push({
+            name: p.profile.full_name || 'Meeting Attendee',
+            email: p.profile.email,
+            isHost: false,
+          });
+        }
+      });
+
+      // Fallback if empty test
+      if (recipients.length === 0 && currentUser?.email) {
+        recipients.push({
+          name: currentUser.full_name || 'User',
+          email: currentUser.email,
+          isHost: true,
+        });
+      }
+
+      // Dispatch dual notifications to all recipients
+      for (const rec of recipients) {
+        await dispatchDualNotification({
+          category: 'meeting_reminder',
+          title: `⏰ Meeting Reminder: ${item.title}`,
+          message: `Your scheduled meeting is starting now (${format(item.startTime, 'h:mm a')})!`,
+          targetUserId: rec.email === host?.email ? host?.id : undefined,
+          recipientEmail: rec.email,
+          recipientName: rec.name,
+          emailPayload: {
+            to: rec.email,
+            recipientName: rec.name,
+            subject: `⏰ Meeting Reminder: ${item.title}`,
+            type: 'meeting_reminder',
+            eventTitle: item.title,
+            eventDescription: item.description || 'Your scheduled multi-party meeting is starting now.',
+            startTime: item.startTime.toISOString(),
+            hostName: host?.full_name || 'Meeting Host',
+            hostEmail: host?.email,
+          },
+          showToastAlert: rec.email === currentUser?.email,
+          playChime: false, // already played once
+          eventId: item.id,
+          eventTime: item.startTime.toISOString(),
+        });
+      }
+    } else {
+      // 2. If it is a personal schedule routine: Notify schedule creator via email & screen
+      const targetEmail = currentUser?.email || 'adwaat1888@gmail.com';
+      await dispatchDualNotification({
+        category: 'schedule_reminder',
+        title: `⏰ Routine Due: ${item.title}`,
+        message: `Your scheduled habit "${item.title}" is due now (${format(item.startTime, 'h:mm a')}).`,
+        targetUserId: currentUser?.id,
+        recipientEmail: targetEmail,
+        recipientName: currentUser?.full_name || 'Schedule Member',
+        emailPayload: {
+          to: targetEmail,
+          recipientName: currentUser?.full_name || 'Schedule Member',
+          subject: `⏰ Reminder Alert: ${item.title}`,
+          type: 'schedule_reminder',
+          eventTitle: item.title,
+          eventDescription: item.description || 'Your recurring schedule habit is starting now.',
+          startTime: item.startTime.toISOString(),
+          hostName: currentUser?.full_name || 'You',
+        },
+        showToastAlert: true,
+        playChime: false,
+        eventId: item.id,
+        eventTime: item.startTime.toISOString(),
+      });
+    }
+
+    // Native browser notification if permitted
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(`⏰ Antigravity AI: ${item.title}`, {
+          body: item.description || `Starting now at ${format(item.startTime, 'h:mm a')}`,
+          icon: '/favicon.ico',
+        });
+      } catch (e) {}
     }
   };
 
-  // Check every 5 seconds for due reminders
+  // Periodic reminder checker: checks every 4 seconds
   useEffect(() => {
     const checkReminders = () => {
       const now = new Date();
       const nowTime = now.getTime();
 
-      // Check schedules
+      // 1. Check Schedules
       for (const s of schedules) {
         if (s.is_completed) continue;
         const sTime = new Date(s.start_time).getTime();
         const reminderKey = `sched-${s.id}-${Math.floor(sTime / 60000)}`;
 
-        // Trigger if start time is within past 2 minutes to now (or upcoming 15 seconds)
+        // Trigger if start time is within past 3 minutes to upcoming 30 seconds
         const diffSecs = (sTime - nowTime) / 1000;
-        if (diffSecs <= 15 && diffSecs >= -120 && !notifiedIds.has(reminderKey)) {
+        if (diffSecs <= 30 && diffSecs >= -180 && !notifiedIds.has(reminderKey)) {
           setNotifiedIds((prev) => new Set(prev).add(reminderKey));
           const reminderItem: DueReminderItem = {
             id: s.id,
@@ -107,13 +208,13 @@ export function ReminderNotifier() {
         }
       }
 
-      // Check appointments
+      // 2. Check Appointments
       for (const a of appointments) {
         const aTime = new Date(a.start_time).getTime();
         const reminderKey = `appt-${a.id}-${Math.floor(aTime / 60000)}`;
         const diffSecs = (aTime - nowTime) / 1000;
 
-        if (diffSecs <= 15 && diffSecs >= -120 && !notifiedIds.has(reminderKey)) {
+        if (diffSecs <= 30 && diffSecs >= -180 && !notifiedIds.has(reminderKey)) {
           setNotifiedIds((prev) => new Set(prev).add(reminderKey));
           const reminderItem: DueReminderItem = {
             id: a.id,
@@ -128,58 +229,11 @@ export function ReminderNotifier() {
       }
     };
 
-    const triggerAlert = (item: DueReminderItem) => {
-      setActiveAlert(item);
-      playChimeSound();
-      showToast(
-        `⏰ Reminder Alert: ${item.title}`,
-        `Your scheduled ${item.type} is starting now (${format(item.startTime, 'h:mm a')})!`,
-        'warning'
-      );
-
-      // Dispatch Email reminder alert
-      const targetRecipientEmail = currentUser?.email || 'kibretmail@gmail.com';
-      try {
-        fetch('/api/notifications/email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: targetRecipientEmail,
-            recipientName: currentUser?.full_name || 'Schedule Member',
-            subject: `⏰ Screen Reminder Alert: ${item.title}`,
-            type: 'schedule_reminder',
-            eventTitle: item.title,
-            eventDescription: item.description,
-            startTime: item.startTime.toISOString(),
-          }),
-        }).catch(() => {});
-      } catch (e) {}
-
-      // System notification if permitted
-      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-        try {
-          new Notification(`⏰ Antigravity AI Reminder: ${item.title}`, {
-            body: item.description || `Event starting now at ${format(item.startTime, 'h:mm a')}`,
-            icon: '/favicon.ico',
-          });
-        } catch (e) {}
-      }
-
-      try {
-        confetti({
-          particleCount: 40,
-          spread: 50,
-          origin: { y: 0.3 },
-          colors: ['#6366F1', '#EC4899', '#F59E0B'],
-        });
-      } catch (e) {}
-    };
-
     const interval = setInterval(checkReminders, 4000);
-    checkReminders(); // check immediately
+    checkReminders();
 
     return () => clearInterval(interval);
-  }, [schedules, appointments, notifiedIds, showToast]);
+  }, [schedules, appointments, notifiedIds, participants, currentUser, allProfiles]);
 
   if (!activeAlert) return null;
 

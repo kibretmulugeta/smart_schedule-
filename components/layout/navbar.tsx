@@ -4,6 +4,9 @@ import React, { useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useSchedule } from '@/context/schedule-context';
 import { useToast } from '@/context/toast-context';
+import { useNotification } from '@/context/notification-context';
+import { NotificationCenter } from '@/components/notifications/notification-center';
+import { ServerStatusModal } from '@/components/system/server-status-modal';
 import { parseNaturalLanguageInput } from '@/lib/ai-scheduler';
 import { ScheduleModal } from '@/components/schedules/schedule-modal';
 import { AppointmentModal } from '@/components/appointments/appointment-modal';
@@ -21,6 +24,7 @@ import {
   Clock,
   LogOut,
   LogIn,
+  Server,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -29,11 +33,13 @@ export function Navbar() {
   const { currentUser, allProfiles, switchUser, isAdmin, isAuthenticated, signOut } = useAuth();
   const { participants, createSchedule, createAppointment } = useSchedule();
   const { showToast } = useToast();
+  const { unreadCount, setIsNotificationCenterOpen, isNotificationCenterOpen } = useNotification();
 
   const [aiPrompt, setAiPrompt] = useState('');
   const [isProcessingAi, setIsProcessingAi] = useState(false);
   const [showPersonaMenu, setShowPersonaMenu] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showServerStatusModal, setShowServerStatusModal] = useState(false);
 
   // Pending invites count for current user
   const pendingInvitesCount = currentUser
@@ -160,17 +166,32 @@ export function Navbar() {
             <span>+3m Test Alert</span>
           </button>
 
-          {/* Invites notification badge */}
-          <Link
-            href="/appointments"
-            className="relative p-2 text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-xl transition-colors"
-            title={`${pendingInvitesCount} Pending Meeting Invitations`}
+          {/* Server & Database Diagnostics Button */}
+          <button
+            type="button"
+            onClick={() => setShowServerStatusModal(true)}
+            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
+            title="Check Live Server & Database Diagnostics"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <Server className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Server & DB</span>
+          </button>
+
+          {/* Interactive Screen Notifications & Alerts Bell Trigger */}
+          <button
+            type="button"
+            onClick={() => setIsNotificationCenterOpen(!isNotificationCenterOpen)}
+            className="relative p-2 text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl transition-all border border-transparent hover:border-slate-700"
+            title={`Notifications & Alerts (${unreadCount} unread)`}
           >
             <Bell className="w-4 h-4" />
-            {pendingInvitesCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-slate-950 animate-pulse" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-indigo-600 text-white text-[9px] font-black flex items-center justify-center ring-2 ring-slate-950 shadow-md shadow-indigo-600/40 animate-pulse">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
             )}
-          </Link>
+          </button>
 
           {/* Explicit Top Bar Auth Action Button */}
           {isAuthenticated ? (
@@ -319,6 +340,15 @@ export function Navbar() {
 
       {/* Global Auth Modal Popup */}
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+
+      {/* Interactive Screen Notification Center Drawer */}
+      <NotificationCenter />
+
+      {/* Real Server & Database Diagnostics Modal */}
+      <ServerStatusModal
+        isOpen={showServerStatusModal}
+        onClose={() => setShowServerStatusModal(false)}
+      />
     </header>
   );
 }

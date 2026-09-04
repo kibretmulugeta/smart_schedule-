@@ -148,13 +148,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({
           to: newProfile.email,
           recipientName: newProfile.full_name || 'New Member',
-          subject: '🎉 Welcome to Antigravity AI Scheduling System!',
+          subject: '🎉 Welcome to Smart Scheduling System!',
           type: 'daily_digest',
           eventTitle: 'Account Verified & Notification Dispatch Active',
           eventDescription:
             'Your account is ready. You will automatically receive email notifications whenever team members invite you to meetings or your scheduled routines are due.',
           startTime: new Date().toISOString(),
-          hostName: 'Antigravity AI System',
+          hostName: 'Smart Scheduling System',
         }),
       }).catch(() => {});
     } catch (e) {}

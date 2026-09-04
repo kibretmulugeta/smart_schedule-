@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
       },
       emailService: {
         provider: 'Resend',
-        sender: process.env.EMAIL_FROM || 'Antigravity AI <onboarding@resend.dev>',
+        sender: process.env.EMAIL_FROM || 'Smart Scheduling <onboarding@resend.dev>',
         status: resendStatus,
         accountOwner: 'kibretmail@gmail.com',
         verifiedRecipientNotice:

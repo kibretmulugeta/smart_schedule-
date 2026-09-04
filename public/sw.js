@@ -1,5 +1,5 @@
-// Service Worker for Antigravity AI Lock Screen Notifications & Push Alarms
-const CACHE_NAME = 'antigravity-schedule-cache-v1';
+// Service Worker for Smart Scheduling Lock Screen Notifications & Push Alarms
+const CACHE_NAME = 'smart-scheduling-cache-v1';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -16,11 +16,11 @@ self.addEventListener('push', (event) => {
     try {
       data = event.data.json();
     } catch (e) {
-      data = { title: '⏰ Antigravity AI Alert', message: event.data.text() };
+      data = { title: '⏰ Smart Scheduling Alert', message: event.data.text() };
     }
   }
 
-  const title = data.title || '⏰ Antigravity AI Lock-Screen Reminder';
+  const title = data.title || '⏰ Smart Scheduling Lock-Screen Reminder';
   const options = {
     body: data.message || 'You have an active schedule alert or meeting.',
     icon: '/favicon.ico',
@@ -46,7 +46,7 @@ self.addEventListener('push', (event) => {
 self.addEventListener('message', (event) => {
   const data = event.data;
   if (data && data.type === 'TRIGGER_LOCK_SCREEN_ALERT') {
-    const title = data.title || '⏰ Antigravity AI Alert';
+    const title = data.title || '⏰ Smart Scheduling Alert';
     const options = {
       body: data.message || 'Scheduled routine or meeting is starting now.',
       icon: '/icon-192.png',

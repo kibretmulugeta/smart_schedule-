@@ -97,7 +97,7 @@ export default function AIPage() {
 
   const handleApplyFocusBlock = async (block: FocusBlockRecommendation) => {
     await createSchedule({
-      title: `Antigravity Deep Focus (${block.durationMinutes}m)`,
+      title: `Smart Scheduling Deep Focus (${block.durationMinutes}m)`,
       description: `Optimized deep work session: ${block.reason}`,
       category_id: null,
       frequency: 'weekly',
@@ -118,7 +118,7 @@ export default function AIPage() {
         
         <div className="relative z-10 space-y-2 max-w-2xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-bold border border-purple-500/30">
-            <BrainCircuit className="w-3.5 h-3.5" /> Antigravity AI Engine
+            <BrainCircuit className="w-3.5 h-3.5" /> Smart Scheduling AI Engine
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             Autonomous Scheduling & Focus Optimizer

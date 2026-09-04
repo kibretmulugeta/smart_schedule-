@@ -8,7 +8,7 @@ import { AppShell } from '@/components/layout/app-shell';
 import { ReminderNotifier } from '@/components/reminders/reminder-notifier';
 
 export const metadata: Metadata = {
-  title: 'Antigravity AI Scheduling & Appointment System',
+  title: 'Smart Scheduling & Appointment System',
   description:
     'Production-grade dynamic recurrence engine, multi-party appointment scheduling, and AI focus optimization powered by Next.js & Supabase PostgreSQL.',
 };

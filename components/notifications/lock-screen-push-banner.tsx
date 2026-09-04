@@ -101,7 +101,7 @@ export function LockScreenPushBanner() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: '⏰ Antigravity AI Phone Lock-Screen Alert',
+          title: '⏰ Smart Scheduling Phone Lock-Screen Alert',
           message: 'Wake-up alert! Your upcoming scheduled appointment is starting now.',
           delaySeconds: 5,
         }),

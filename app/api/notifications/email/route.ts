@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
             Authorization: `Bearer ${resendApiKey}`,
           },
           body: JSON.stringify({
-            from: process.env.EMAIL_FROM || 'Antigravity AI <onboarding@resend.dev>',
+            from: process.env.EMAIL_FROM || 'Smart Scheduling <onboarding@resend.dev>',
             to: [body.to],
             subject: body.subject,
             html: htmlContent,
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
                   Authorization: `Bearer ${resendApiKey}`,
                 },
                 body: JSON.stringify({
-                  from: process.env.EMAIL_FROM || 'Antigravity AI <onboarding@resend.dev>',
+                  from: process.env.EMAIL_FROM || 'Smart Scheduling <onboarding@resend.dev>',
                   to: ['kibretmail@gmail.com'],
                   subject: `[Live Delivery for: ${body.to}] ${body.subject}`,
                   html: htmlContent,

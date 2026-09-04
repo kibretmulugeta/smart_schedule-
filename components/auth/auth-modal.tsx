@@ -103,7 +103,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalP
       onClose={onClose}
       title={
         mode === 'login'
-          ? 'Sign In to Antigravity'
+          ? 'Sign In to Smart Scheduling'
           : mode === 'register'
           ? 'Create New Account'
           : 'Reset Password'

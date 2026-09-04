@@ -348,12 +348,12 @@ create table public.profiles (
                   body: JSON.stringify({
                     to: currentUser.email,
                     recipientName: currentUser.full_name || 'User',
-                    subject: '⚡ Test Email: Antigravity AI Notification Engine',
+                    subject: '⚡ Test Email: Smart Scheduling Notification Engine',
                     type: 'schedule_reminder',
-                    eventTitle: 'Antigravity AI Quantum Sync (Test Alert)',
+                    eventTitle: 'Smart Scheduling Sync (Test Alert)',
                     eventDescription: 'This is an automatic test notification verifying the email delivery pipeline.',
                     startTime: new Date().toISOString(),
-                    hostName: 'Antigravity Automated Notifier',
+                    hostName: 'Smart Scheduling Automated Notifier',
                   }),
                 });
                 const data = await res.json();

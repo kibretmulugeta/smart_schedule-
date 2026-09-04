@@ -1,5 +1,5 @@
 -- ==============================================================================
--- ANTIGRAVITY AI SCHEDULING & APPOINTMENT SYSTEM
+-- SMART SCHEDULING & APPOINTMENT SYSTEM
 -- PostgreSQL Schema & Supabase Configuration
 -- ==============================================================================
 

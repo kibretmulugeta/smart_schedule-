@@ -1,6 +1,6 @@
 {
-  "name": "Antigravity AI Scheduling & Appointments",
-  "short_name": "Antigravity",
+  "name": "Smart Scheduling & Appointments",
+  "short_name": "Smart Scheduling",
   "description": "Production-grade dynamic recurrence engine, multi-party appointment scheduling, and AI focus optimization.",
   "start_url": "/",
   "display": "standalone",

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: antigravity-ai-scheduling
+    name: smart-scheduling
     runtime: node
     plan: free
     buildCommand: npm install && npm run build
@@ -15,4 +15,4 @@ services:
       - key: RESEND_API_KEY
         sync: false
       - key: EMAIL_FROM
-        value: Antigravity AI <onboarding@resend.dev>
+        value: Smart Scheduling <onboarding@resend.dev>

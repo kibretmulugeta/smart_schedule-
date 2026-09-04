@@ -1,4 +1,4 @@
-# Antigravity AI Scheduling & Appointment System
+# Smart Scheduling & Appointment System
 
 An enterprise-grade, fully typed full-stack scheduling and collaborative appointment management application built with **Next.js (App Router)**, **Tailwind CSS**, **TypeScript**, and **Supabase (PostgreSQL 16, Auth, and Row Level Security)**.
 
@@ -28,7 +28,7 @@ Supports complex scheduling frequencies:
 - Secondary invitation forwarding governed by the schema's `can_reshare` attribute and Row Level Security policies.
 - Attendee roster with live status badges.
 
-### 3. Antigravity AI Assistant & Natural Language Engine
+### 3. Smart Scheduling AI Assistant & Natural Language Engine
 - **Natural Language Parsing**: Translates human prompts (e.g. *"Schedule 30m team sync every weekend at 10am"*) into typed recurrence parameters.
 - **Conflict Detection**: Flags overlapping appointments and offers smart resolution time offsets.
 - **Deep Work Focus Optimizer**: Analyzes open calendar slots and suggests 90–150 minute circadian focus blocks.

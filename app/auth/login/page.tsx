@@ -122,7 +122,7 @@ export default function LoginPage() {
             <Zap className="w-7 h-7 text-white fill-white" />
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight flex items-center justify-center gap-2">
-            Antigravity <span className="text-indigo-400 font-mono text-sm">AUTH</span>
+            Smart <span className="text-indigo-400 font-mono text-sm">SCHEDULING</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
             Multi-frequency time blocking, autonomous appointments & PostgreSQL Row Level Security.
@@ -233,7 +233,7 @@ export default function LoginPage() {
               </div>
 
               <Button type="submit" variant="primary" className="w-full h-11 text-xs font-bold" disabled={loading}>
-                {loading ? 'Authenticating...' : 'Sign In to Antigravity'}
+                {loading ? 'Authenticating...' : 'Sign In to Smart Scheduling'}
               </Button>
 
               {/* Social Login Options */}

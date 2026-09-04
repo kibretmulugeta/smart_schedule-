@@ -53,7 +53,7 @@ export function ReminderNotifier() {
       const detail = e.detail || {};
       const testItem: DueReminderItem = {
         id: `test-${Date.now()}`,
-        title: detail.title || 'Antigravity AI Dual-Channel Sync Alert',
+        title: detail.title || 'Smart Scheduling Dual-Channel Sync Alert',
         description: detail.description || 'Live screen reminder and verified email dispatch test alert.',
         startTime: new Date(),
         type: detail.type || 'appointment',
@@ -171,7 +171,7 @@ export function ReminderNotifier() {
     // Native browser notification if permitted
     if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
       try {
-        new Notification(`⏰ Antigravity AI: ${item.title}`, {
+        new Notification(`⏰ Smart Scheduling: ${item.title}`, {
           body: item.description || `Starting now at ${format(item.startTime, 'h:mm a')}`,
           icon: '/favicon.ico',
         });

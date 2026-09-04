@@ -62,7 +62,7 @@ export function ServerStatusModal({ isOpen, onClose }: ServerStatusModalProps) {
           eventTitle: 'Live Server Diagnostics Check',
           eventDescription: 'Direct verification of live email dispatch and backend database synchronization.',
           startTime: new Date().toISOString(),
-          hostName: 'Antigravity AI Central Server',
+          hostName: 'Smart Scheduling Central Server',
         }),
       });
       const data = await res.json();

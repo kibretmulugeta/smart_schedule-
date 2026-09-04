@@ -67,7 +67,7 @@ export function Navbar() {
           is_completed: false,
         });
         showToast(
-          'Antigravity AI Scheduled',
+          'Smart Scheduling AI Scheduled',
           `Parsed "${parsed.title}" with recurrence [${parsed.frequency}].`,
           'success'
         );
@@ -81,7 +81,7 @@ export function Navbar() {
           },
           []
         );
-        showToast('Antigravity AI Meeting Created', `Created "${parsed.title}".`, 'success');
+        showToast('Smart Scheduling Meeting Created', `Created "${parsed.title}".`, 'success');
       }
 
       setAiPrompt('');
@@ -103,10 +103,10 @@ export function Navbar() {
             </div>
             <div>
               <span className="text-sm font-black tracking-tight text-white flex items-center gap-1.5">
-                ANTIGRAVITY <span className="text-indigo-400 font-mono text-xs">AI</span>
+                SMART <span className="text-indigo-400 font-mono text-xs">SCHEDULING</span>
               </span>
               <span className="text-[10px] text-slate-400 block -mt-1 font-medium tracking-wide">
-                Dynamic Scheduling Engine
+                AI Scheduling & Habit Engine
               </span>
             </div>
           </Link>
@@ -121,7 +121,7 @@ export function Navbar() {
                 type="text"
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
-                placeholder="Ask Antigravity AI (e.g., 'Schedule focus block every weekday at 10am', 'Sync with Elena this Friday')..."
+                placeholder="Ask Smart Scheduling AI (e.g., 'Schedule focus block every weekday at 10am', 'Sync with Elena this Friday')..."
                 className="w-full pl-10 pr-24 py-2 bg-slate-900/90 border border-slate-800 focus:border-indigo-500/60 rounded-xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all shadow-inner"
               />
               <button

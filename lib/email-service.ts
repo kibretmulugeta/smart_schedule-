@@ -28,7 +28,7 @@ export interface EmailNotificationPayload {
 }
 
 /**
- * Generates responsive, executive-grade HTML email templates for Antigravity AI notifications
+ * Generates responsive, executive-grade HTML email templates for Smart Scheduling notifications
  */
 export function generateEmailHtml(payload: EmailNotificationPayload): string {
   let startFormatted = 'Upcoming Scheduled Event';
@@ -166,7 +166,7 @@ export function generateEmailHtml(payload: EmailNotificationPayload): string {
   <div class="container">
     <div class="header">
       <div class="badge">${badgeLabel}</div>
-      <h1 class="title">Antigravity AI Scheduling</h1>
+      <h1 class="title">Smart Scheduling</h1>
       <p class="subtitle">Multi-Party Appointments · Instant Recurrence · Real-Time Alerts</p>
     </div>
     <div class="content">
@@ -195,7 +195,7 @@ export function generateEmailHtml(payload: EmailNotificationPayload): string {
 
       <div style="text-align: center;">
         <a href="${appUrl}" class="btn">
-          View & Respond in Antigravity Calendar →
+          View & Respond in Smart Scheduling Calendar →
         </a>
       </div>
       <div style="text-align: center; margin-top: 10px;">
@@ -204,7 +204,7 @@ export function generateEmailHtml(payload: EmailNotificationPayload): string {
     </div>
     <div class="footer">
       This notification was automatically generated and dispatched to <strong>${payload.to}</strong>.<br>
-      Antigravity AI Engine · PostgreSQL Row Level Security · Instant Email & Screen Alert Delivery
+      Smart Scheduling AI Engine · PostgreSQL Row Level Security · Instant Email & Screen Alert Delivery
     </div>
   </div>
 </body>
@@ -228,12 +228,12 @@ export function generateIcsCalendarInvite(payload: EmailNotificationPayload): st
   const uid = `event-${Date.now()}-${Math.random().toString(36).substring(2, 9)}@smart-schedule`;
 
   const cleanTitle = (payload.eventTitle || 'Scheduled Event').replace(/[\\;,]/g, ' ');
-  const cleanDesc = (payload.eventDescription || 'Antigravity AI Scheduled Event').replace(/[\\;,]/g, ' ');
+  const cleanDesc = (payload.eventDescription || 'Smart Scheduling Scheduled Event').replace(/[\\;,]/g, ' ');
 
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Antigravity AI//Smart Schedule Lock Screen Notifier//EN',
+    'PRODID:-//Smart Scheduling//Smart Scheduling Lock Screen Notifier//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:REQUEST',
     'BEGIN:VEVENT',
@@ -246,7 +246,7 @@ export function generateIcsCalendarInvite(payload: EmailNotificationPayload): st
     'PRIORITY:1',
     'CLASS:PUBLIC',
     'STATUS:CONFIRMED',
-    `ORGANIZER;CN=${payload.hostName || 'Antigravity Host'}:mailto:${payload.hostEmail || 'onboarding@resend.dev'}`,
+    `ORGANIZER;CN=${payload.hostName || 'Smart Scheduling Host'}:mailto:${payload.hostEmail || 'onboarding@resend.dev'}`,
     `ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;CN=${payload.recipientName || 'Invitee'}:mailto:${payload.to}`,
     'BEGIN:VALARM',
     'TRIGGER:-PT0M',

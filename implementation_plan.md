@@ -1,6 +1,6 @@
-# Implementation Plan: Antigravity AI Scheduling & Appointment System
+# Implementation Plan: Smart Scheduling & Appointment System
 
-Build a production-level, fully typed, high-performance web application named **"Antigravity AI Scheduling & Appointment System"** using Next.js (App Router), Tailwind CSS, TypeScript, and Supabase (PostgreSQL, Auth, and Row Level Security).
+Build a production-level, fully typed, high-performance web application named **"Smart Scheduling & Appointment System"** using Next.js (App Router), Tailwind CSS, TypeScript, and Supabase (PostgreSQL, Auth, and Row Level Security).
 
 ## User Review Required
 

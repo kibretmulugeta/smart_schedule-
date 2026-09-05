@@ -35,17 +35,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const savedProfiles = localStorage.getItem(LOCAL_STORAGE_KEY_PROFILES);
+      let activeProfilesList = MOCK_PROFILES;
       if (savedProfiles) {
-        setProfiles(JSON.parse(savedProfiles));
+        const parsed: Profile[] = JSON.parse(savedProfiles);
+        const combined = [...parsed];
+        for (const mp of MOCK_PROFILES) {
+          if (!combined.some((p) => p.email.toLowerCase() === mp.email.toLowerCase())) {
+            combined.push(mp);
+          }
+        }
+        activeProfilesList = combined;
       }
+      setProfiles(activeProfilesList);
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY_PROFILES, JSON.stringify(activeProfilesList));
+      } catch (e) {}
+
       const savedUserId = localStorage.getItem(LOCAL_STORAGE_KEY_USER);
       if (savedUserId) {
         if (savedUserId === 'guest_signed_out') {
           setCurrentUser(null);
         } else {
-          const found = (savedProfiles ? JSON.parse(savedProfiles) : MOCK_PROFILES).find(
-            (p: Profile) => p.id === savedUserId
-          );
+          const found = activeProfilesList.find((p: Profile) => p.id === savedUserId);
           if (found) {
             setCurrentUser(found);
           }

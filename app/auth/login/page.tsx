@@ -23,24 +23,33 @@ import {
   Shield,
 } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function LoginPage() {
   const { allProfiles, switchUser, loginUser, registerNewUser, resetPassword } = useAuth();
   const { showToast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState<'login' | 'register' | 'demo'>('login');
+  const paramMode = searchParams.get('mode');
+  const paramEmail = searchParams.get('email');
+  const paramToken = searchParams.get('token');
+  const paramType = searchParams.get('type') || 'formal';
+  const paramApptId = searchParams.get('appointmentId');
+
+  const [activeTab, setActiveTab] = useState<'login' | 'register' | 'demo'>(
+    paramMode === 'register' || paramEmail ? 'register' : 'login'
+  );
 
   // Form states
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(paramEmail || '');
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<'user' | 'admin'>('user');
   const [rememberMe, setRememberMe] = useState(true);
-  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
@@ -266,9 +275,34 @@ export default function LoginPage() {
           {/* TAB 2: REGISTER / CREATE ACCOUNT */}
           {activeTab === 'register' && (
             <form onSubmit={handleRegisterSubmit} className="space-y-4">
+              {/* Invitation Banner Card */}
+              {paramEmail && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-950/80 via-purple-950/80 to-slate-900 border border-indigo-500/40 shadow-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold text-[10px] uppercase tracking-wider border border-indigo-500/30">
+                      <Sparkles className="w-3 h-3 text-cyan-400" />
+                      {paramType === 'appointment' ? '📩 Meeting Invitation' : '✉️ Formal Platform Invitation'}
+                    </span>
+                    <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> Verified Token
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-200">
+                    Invitation received for <strong className="text-white underline">{paramEmail}</strong>.
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    {paramType === 'appointment'
+                      ? 'Completing registration will automatically claim your pending meeting invitation and add it directly to your Smart Scheduling calendar.'
+                      : 'You were formally invited to join the platform. Complete your account credentials below to activate membership.'}
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-indigo-400" /> Full Name
+                <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-indigo-400" /> Full Name *
+                  </span>
                 </label>
                 <Input
                   type="text"
@@ -280,14 +314,23 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-indigo-400" /> Work Email
+                <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-indigo-400" /> Invited Email Address *
+                  </span>
+                  {paramEmail && (
+                    <span className="text-[10px] text-indigo-300 font-bold bg-indigo-500/20 px-2 py-0.5 rounded">
+                      Locked to Invitation Email
+                    </span>
+                  )}
                 </label>
                 <Input
                   type="email"
                   placeholder="elena.rostova@company.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => !paramEmail && setEmail(e.target.value)}
+                  readOnly={Boolean(paramEmail)}
+                  className={paramEmail ? 'opacity-80 bg-slate-950 font-mono text-indigo-200 cursor-not-allowed' : ''}
                   required
                 />
               </div>

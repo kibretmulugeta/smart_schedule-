@@ -896,6 +896,14 @@
       "avatar_url": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
       "role": "user",
       "created_at": "2026-01-15T14:20:00Z"
+    },
+    {
+      "id": "user-kaleb",
+      "email": "kalebasnake2019@gmail.com",
+      "full_name": "Kaleb (User)",
+      "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=kalebasnake2019%40gmail.com",
+      "role": "user",
+      "created_at": "2026-01-16T08:00:00Z"
     }
   ],
   "notifications": []

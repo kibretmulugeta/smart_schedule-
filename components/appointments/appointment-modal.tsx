@@ -32,6 +32,7 @@ export function AppointmentModal({
   const [startDateTime, setStartDateTime] = useState('');
   const [endDateTime, setEndDateTime] = useState('');
   const [selectedParticipants, setSelectedParticipants] = useState<{ userId: string; canReshare: boolean }[]>([]);
+  const [customEmailInput, setCustomEmailInput] = useState('');
   const [agendaSuggestions, setAgendaSuggestions] = useState<string[]>([]);
   const [conflicts, setConflicts] = useState<any[]>([]);
 
@@ -229,14 +230,91 @@ export function AppointmentModal({
             <div className="flex items-center justify-between">
               <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
                 <Users className="w-4 h-4 text-indigo-400" />
-                Invite Participants & Set Reshare Permissions
+                Invite Participants & Unregistered Email Invites
               </label>
               <span className="text-[11px] text-slate-400">
                 {selectedParticipants.length} invited
               </span>
             </div>
 
+            {/* Custom Email Invite Input */}
+            <div className="flex items-center gap-2 p-2 bg-slate-950/80 border border-slate-800 rounded-xl">
+              <input
+                type="email"
+                placeholder="Enter non-registered email (e.g. guest@client.com)..."
+                value={customEmailInput}
+                onChange={(e) => setCustomEmailInput(e.target.value)}
+                className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700/80 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  const emailClean = customEmailInput.trim().toLowerCase();
+                  if (emailClean && !selectedParticipants.some((p) => p.userId === emailClean)) {
+                    const matchProfile = allProfiles.find((p) => p.email.toLowerCase() === emailClean);
+                    const targetId = matchProfile ? matchProfile.id : emailClean;
+                    setSelectedParticipants([...selectedParticipants, { userId: targetId, canReshare: true }]);
+                    setCustomEmailInput('');
+                  }
+                }}
+              >
+                + Add Email Invite
+              </Button>
+            </div>
+
             <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+              {/* Unregistered Custom Email Invites */}
+              {selectedParticipants
+                .filter((p) => p.userId.includes('@'))
+                .map((p) => (
+                  <div
+                    key={p.userId}
+                    className="flex items-center justify-between p-2.5 rounded-xl border border-pink-500/40 bg-pink-950/20"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-pink-500/20 text-pink-300 font-bold text-xs flex items-center justify-center border border-pink-500/30">
+                        ✉️
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-100 flex items-center gap-2">
+                          {p.userId}
+                          <span className="text-[9px] px-1.5 py-0.2 bg-pink-500/20 text-pink-300 font-bold rounded border border-pink-500/30">
+                            Unregistered Email Invite
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          Email invitation link will be dispatched upon scheduling.
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleResharePermission(p.userId)}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all ${
+                          p.canReshare
+                            ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                            : 'bg-slate-800 border-slate-700 text-slate-400'
+                        }`}
+                      >
+                        <Share2 className="w-3 h-3" />
+                        {p.canReshare ? 'Can Reshare' : 'No Forwarding'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleParticipant(p.userId)}
+                        className="w-5 h-5 rounded-full bg-rose-500/20 text-rose-300 flex items-center justify-center hover:bg-rose-500/40 text-xs font-bold"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+              {/* Registered Profiles */}
               {allProfiles
                 .filter((p) => p.id !== currentUser?.id)
                 .map((profile) => {

@@ -25,6 +25,8 @@ import {
 import { format } from 'date-fns';
 import Image from 'next/image';
 
+import { FormalInviteModal } from '@/components/invitations/formal-invite-modal';
+
 export default function AppointmentsPage() {
   const {
     getUserAppointments,
@@ -36,6 +38,7 @@ export default function AppointmentsPage() {
 
   const [activeFilter, setActiveFilter] = useState<'all' | 'created' | 'invited' | 'pending'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFormalInviteOpen, setIsFormalInviteOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [forwardModalAppointment, setForwardModalAppointment] = useState<Appointment | null>(null);
 
@@ -62,21 +65,31 @@ export default function AppointmentsPage() {
           </div>
           <h1 className="text-2xl font-black text-white">Collaborative Meetings & Invites</h1>
           <p className="text-xs text-slate-400 mt-1 max-w-xl">
-            Invite colleagues, track RSVPs in real time, and permit downstream forwarding with Row Level Security permissions.
+            Invite registered team members or non-registered email addresses to meeting appointments or formal platform registration.
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          onClick={() => {
-            setEditingAppointment(null);
-            setIsModalOpen(true);
-          }}
-          className="self-start sm:self-center"
-        >
-          <Plus className="w-4 h-4" />
-          Schedule Meeting
-        </Button>
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          <Button
+            variant="secondary"
+            onClick={() => setIsFormalInviteOpen(true)}
+            className="text-xs font-semibold"
+          >
+            <Mail className="w-4 h-4 text-indigo-400" />
+            Invite via Email
+          </Button>
+
+          <Button
+            variant="primary"
+            onClick={() => {
+              setEditingAppointment(null);
+              setIsModalOpen(true);
+            }}
+          >
+            <Plus className="w-4 h-4" />
+            Schedule Meeting
+          </Button>
+        </div>
       </div>
 
       {/* Tabs / Filter Chips */}
@@ -274,6 +287,11 @@ export default function AppointmentsPage() {
         isOpen={Boolean(forwardModalAppointment)}
         onClose={() => setForwardModalAppointment(null)}
         appointment={forwardModalAppointment}
+      />
+
+      <FormalInviteModal
+        isOpen={isFormalInviteOpen}
+        onClose={() => setIsFormalInviteOpen(false)}
       />
     </div>
   );

@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 
+import { FormalInviteModal } from '@/components/invitations/formal-invite-modal';
+
 const COLOR_SWATCHES = [
   '#6366F1', // Indigo
   '#8B5CF6', // Violet
@@ -37,6 +39,7 @@ export default function SettingsPage() {
   const { currentUser, updateProfile } = useAuth();
   const { categories, createCategory, updateCategory, deleteCategory } = useSchedule();
   const { showToast } = useToast();
+  const [isFormalInviteOpen, setIsFormalInviteOpen] = useState(false);
 
   // Profile form
   const [fullName, setFullName] = useState(currentUser?.full_name || '');
@@ -328,47 +331,57 @@ create table public.profiles (
           </div>
         </div>
 
-        {/* Test Email Trigger */}
+        {/* Test & Formal Email Triggers */}
         <div className="p-4 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <div className="text-xs font-bold text-cyan-200">Test Email Notification</div>
+            <div className="text-xs font-bold text-cyan-200">Dispatch Email & Formal Invitations</div>
             <div className="text-[11px] text-slate-400">
-              Send a test HTML email payload to <span className="font-mono text-cyan-300">{currentUser?.email || 'Guest'}</span>.
+              Send test notification emails or issue formal platform registration invites to unregistered team members.
             </div>
           </div>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={async () => {
-              if (!currentUser?.email) return;
-              try {
-                const res = await fetch('/api/notifications/email', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    to: currentUser.email,
-                    recipientName: currentUser.full_name || 'User',
-                    subject: '⚡ Test Email: Smart Scheduling Notification Engine',
-                    type: 'schedule_reminder',
-                    eventTitle: 'Smart Scheduling Sync (Test Alert)',
-                    eventDescription: 'This is an automatic test notification verifying the email delivery pipeline.',
-                    startTime: new Date().toISOString(),
-                    hostName: 'Smart Scheduling Automated Notifier',
-                  }),
-                });
-                const data = await res.json();
-                showToast(
-                  'Email Dispatched! ✉️',
-                  `Successfully sent test notification to ${currentUser.email}.`,
-                  'success'
-                );
-              } catch (e) {
-                showToast('Email Error', 'Failed to dispatch email test.', 'error');
-              }
-            }}
-          >
-            <Send className="w-3.5 h-3.5 text-cyan-400" /> Send Test Email
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setIsFormalInviteOpen(true)}
+            >
+              <Mail className="w-3.5 h-3.5 text-indigo-400" /> Invite Member via Email
+            </Button>
+
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={async () => {
+                if (!currentUser?.email) return;
+                try {
+                  const res = await fetch('/api/notifications/email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      to: currentUser.email,
+                      recipientName: currentUser.full_name || 'User',
+                      subject: '⚡ Test Email: Smart Scheduling Notification Engine',
+                      type: 'schedule_reminder',
+                      eventTitle: 'Smart Scheduling Sync (Test Alert)',
+                      eventDescription: 'This is an automatic test notification verifying the email delivery pipeline.',
+                      startTime: new Date().toISOString(),
+                      hostName: 'Smart Scheduling Automated Notifier',
+                    }),
+                  });
+                  const data = await res.json();
+                  showToast(
+                    'Email Dispatched! ✉️',
+                    `Successfully sent test notification to ${currentUser.email}.`,
+                    'success'
+                  );
+                } catch (e) {
+                  showToast('Email Error', 'Failed to dispatch email test.', 'error');
+                }
+              }}
+            >
+              <Send className="w-3.5 h-3.5 text-cyan-400" /> Send Test Email
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -393,6 +406,11 @@ create table public.profiles (
           {sqlSchemaSnippet}
         </pre>
       </div>
+
+      <FormalInviteModal
+        isOpen={isFormalInviteOpen}
+        onClose={() => setIsFormalInviteOpen(false)}
+      />
     </div>
   );
 }

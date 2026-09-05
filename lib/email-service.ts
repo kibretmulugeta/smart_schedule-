@@ -8,7 +8,9 @@ export type EmailNotificationType =
   | 'forward_invite'
   | 'rsvp_update'
   | 'schedule_created'
-  | 'daily_digest';
+  | 'daily_digest'
+  | 'formal_invite'
+  | 'unregistered_appointment_invite';
 
 export interface EmailNotificationPayload {
   to: string;
@@ -25,6 +27,7 @@ export interface EmailNotificationPayload {
   attendees?: { name?: string; email: string; status?: string }[];
   rsvpStatus?: string;
   reminderLeadMinutes?: number;
+  invitationToken?: string;
 }
 
 /**
@@ -62,6 +65,14 @@ export function generateEmailHtml(payload: EmailNotificationPayload): string {
     case 'appointment_invite':
       badgeColor = '#06B6D4';
       badgeLabel = 'NEW MEETING INVITATION';
+      break;
+    case 'unregistered_appointment_invite':
+      badgeColor = '#EC4899';
+      badgeLabel = '📩 MEETING INVITATION (REGISTRATION REQUIRED)';
+      break;
+    case 'formal_invite':
+      badgeColor = '#8B5CF6';
+      badgeLabel = '✉️ FORMAL PLATFORM INVITATION';
       break;
     case 'meeting_reminder':
       badgeColor = '#F59E0B';
@@ -122,6 +133,10 @@ export function generateEmailHtml(payload: EmailNotificationPayload): string {
     introMessage = `You have successfully scheduled <strong>"${payload.eventTitle}"</strong> with your team. Your calendar and your invitees’ notifications have been dispatched immediately.`;
   } else if (payload.type === 'appointment_invite') {
     introMessage = `<strong>${payload.hostName || 'A team member'}</strong> (${payload.hostEmail || 'Host'}) has invited you to a scheduled meeting:`;
+  } else if (payload.type === 'unregistered_appointment_invite') {
+    introMessage = `<strong>${payload.hostName || 'A colleague'}</strong> (${payload.hostEmail || 'Host'}) has invited you to a meeting: <strong>"${payload.eventTitle}"</strong>. Register your account using this email address to claim your invitation and join the calendar!`;
+  } else if (payload.type === 'formal_invite') {
+    introMessage = `You have been formally invited to join the <strong>Smart Scheduling</strong> platform by <strong>${payload.hostName || 'a team member'}</strong> (${payload.hostEmail || 'Admin'}). Register your account using this email address to get started!`;
   } else if (payload.type === 'meeting_reminder') {
     introMessage = `This is an automated reminder that your scheduled meeting with <strong>${payload.hostName || 'your team'}</strong> is due:`;
   } else if (payload.type === 'schedule_reminder') {
@@ -136,7 +151,13 @@ export function generateEmailHtml(payload: EmailNotificationPayload): string {
     introMessage = 'You have an upcoming scheduled activity:';
   }
 
+  const isInviteType = payload.type === 'unregistered_appointment_invite' || payload.type === 'formal_invite';
+  const buttonText = isInviteType
+    ? 'Register & Claim Invitation →'
+    : 'View & Respond in Smart Scheduling Calendar →';
+
   const appUrl = payload.actionUrl || 'https://smart-schedule-lfpf.vercel.app';
+
 
   return `
 <!DOCTYPE html>
@@ -195,7 +216,7 @@ export function generateEmailHtml(payload: EmailNotificationPayload): string {
 
       <div style="text-align: center;">
         <a href="${appUrl}" class="btn">
-          View & Respond in Smart Scheduling Calendar →
+          ${buttonText}
         </a>
       </div>
       <div style="text-align: center; margin-top: 10px;">

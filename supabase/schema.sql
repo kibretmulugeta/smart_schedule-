@@ -140,6 +140,37 @@ create policy "Manage participants."
     )
   );
 
+-- Invitations Table for Unregistered Email Registrations
+create type invitation_type as enum ('appointment', 'formal');
+create type invitation_status as enum ('pending', 'accepted', 'expired');
+
+create table if not exists public.invitations (
+  id uuid default uuid_generate_v4() primary key,
+  email text not null,
+  invitation_type invitation_type not null default 'formal'::invitation_type,
+  inviter_id uuid references public.profiles(id) on delete cascade not null,
+  appointment_id uuid references public.appointments(id) on delete set null,
+  can_reshare boolean default true,
+  status invitation_status default 'pending'::invitation_status,
+  token text unique not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.invitations enable row level security;
+
+create policy "Invitations viewable by inviter or invited email owner."
+  on public.invitations for select using (
+    auth.uid() = inviter_id or email = auth.email()
+  );
+
+create policy "Users can create invitations."
+  on public.invitations for insert with check (auth.uid() = inviter_id);
+
+create policy "Users can update invitations."
+  on public.invitations for update using (
+    auth.uid() = inviter_id or email = auth.email()
+  );
+
 -- Automatic Profile Creation Trigger on Supabase Auth Signup
 create or replace function public.handle_new_user()
 returns trigger as $$

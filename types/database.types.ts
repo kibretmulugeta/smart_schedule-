@@ -18,6 +18,23 @@ export type FrequencyType =
 
 export type ParticipantStatus = 'pending' | 'accepted' | 'declined';
 
+export type InvitationType = 'appointment' | 'formal';
+export type InvitationStatus = 'pending' | 'accepted' | 'expired';
+
+export interface Invitation {
+  id: string;
+  email: string;
+  invitation_type: InvitationType;
+  inviter_id: string;
+  appointment_id?: string | null;
+  can_reshare?: boolean;
+  status: InvitationStatus;
+  token: string;
+  created_at: string;
+  inviter_profile?: Profile | null;
+  appointment?: Appointment | null;
+}
+
 export interface Profile {
   id: string;
   email: string;

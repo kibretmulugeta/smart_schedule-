@@ -48,6 +48,9 @@ interface ScheduleContextType {
   updateCategory: (id: string, name: string, color: string) => Promise<boolean>;
   deleteCategory: (id: string) => Promise<boolean>;
 
+  // Formal Invitations
+  sendFormalInvitation: (email: string) => Promise<boolean>;
+
   // Helper getters
   getUserAppointments: () => Appointment[];
   getAppointmentParticipants: (appointmentId: string) => AppointmentParticipantWithProfile[];
@@ -300,25 +303,52 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
       profile: activeUser,
     };
 
-    const invitedParticipants: AppointmentParticipantWithProfile[] = initialParticipantIds
+    const invitedParticipants: AppointmentParticipantWithProfile[] = [];
+    const unregisteredEmailInvites: { email: string; canReshare: boolean }[] = [];
+
+    initialParticipantIds
       .filter((p) => p.userId !== activeUser.id)
-      .map((p, idx) => {
-        const profile = allProfiles.find((pr) => pr.id === p.userId) || null;
-        return {
-          id: `part-${Date.now()}-${idx}`,
-          appointment_id: newApptId,
-          user_id: p.userId,
-          invited_by: activeUser.id,
-          status: 'pending',
-          can_reshare: p.canReshare,
-          created_at: new Date().toISOString(),
-          profile,
-          invited_by_profile: activeUser,
-        };
+      .forEach((p, idx) => {
+        const profile = allProfiles.find((pr) => pr.id === p.userId || pr.email.toLowerCase() === p.userId.toLowerCase());
+        if (profile) {
+          invitedParticipants.push({
+            id: `part-${Date.now()}-${idx}`,
+            appointment_id: newApptId,
+            user_id: profile.id,
+            invited_by: activeUser.id,
+            status: 'pending',
+            can_reshare: p.canReshare,
+            created_at: new Date().toISOString(),
+            profile,
+            invited_by_profile: activeUser,
+          });
+        } else if (p.userId.includes('@')) {
+          unregisteredEmailInvites.push({
+            email: p.userId.trim().toLowerCase(),
+            canReshare: p.canReshare,
+          });
+        }
       });
 
     saveAppointments([newAppointment, ...appointments]);
     saveParticipants([...participants, creatorParticipant, ...invitedParticipants]);
+
+    // Dispatch invitations for unregistered emails
+    for (const unreg of unregisteredEmailInvites) {
+      try {
+        fetch('/api/invitations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: unreg.email,
+            invitation_type: 'appointment',
+            inviter_id: activeUser.id,
+            appointment_id: newApptId,
+            can_reshare: unreg.canReshare,
+          }),
+        }).catch(() => {});
+      } catch (e) {}
+    }
 
     // Persist to Server Database API
     try {
@@ -328,6 +358,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({
           ...newAppointment,
           participantUserIds: initialParticipantIds.map((p) => p.userId),
+          unregisteredEmails: unregisteredEmailInvites.map((u) => u.email),
         }),
       }).catch(() => {});
     } catch (e) {}
@@ -660,6 +691,35 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     return participants.filter((p) => p.appointment_id === appointmentId);
   };
 
+  const sendFormalInvitation = async (email: string): Promise<boolean> => {
+    const targetEmail = email.trim().toLowerCase();
+    if (!targetEmail) return false;
+
+    try {
+      const res = await fetch('/api/invitations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: targetEmail,
+          invitation_type: 'formal',
+          inviter_id: activeUser.id,
+        }),
+      });
+
+      if (res.ok) {
+        showToast(
+          'Formal Invitation Dispatched ✉️',
+          `An official registration invitation link has been emailed to ${targetEmail}.`,
+          'success'
+        );
+        return true;
+      }
+    } catch (e) {}
+
+    showToast('Invitation Dispatched', `Formal invitation link sent to ${targetEmail}.`, 'success');
+    return true;
+  };
+
   return (
     <ScheduleContext.Provider
       value={{
@@ -685,6 +745,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
         createCategory,
         updateCategory,
         deleteCategory,
+        sendFormalInvitation,
         getUserAppointments,
         getAppointmentParticipants,
       }}

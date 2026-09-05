@@ -61,20 +61,50 @@ export async function POST(req: NextRequest) {
       profile: hostProfile,
     });
 
-    // 2. Invited attendees (pending by default)
-    for (const uId of invitedUserIds) {
-      if (uId === body.creator_id) continue;
-      const userProfile = db.profiles.find((p) => p.id === uId);
-      newParticipants.push({
-        id: `part-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    // 2. Invited attendees (pending by default) & Unregistered Email Invitations
+    const unregisteredEmails: string[] = body.unregisteredEmails || [];
+    for (const item of invitedUserIds) {
+      if (item === body.creator_id) continue;
+      if (item.includes('@')) {
+        unregisteredEmails.push(item);
+        continue;
+      }
+      const userProfile = db.profiles.find((p) => p.id === item || p.email.toLowerCase() === item.toLowerCase());
+      if (userProfile) {
+        newParticipants.push({
+          id: `part-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          appointment_id: apptId,
+          user_id: userProfile.id,
+          invited_by: body.creator_id,
+          status: 'pending',
+          can_reshare: body.can_reshare !== false,
+          created_at: new Date().toISOString(),
+          profile: userProfile,
+        });
+      } else {
+        unregisteredEmails.push(item);
+      }
+    }
+
+    // Process unregistered emails by creating pending Invitation records
+    const createdInvitations: any[] = [];
+    for (const rawEmail of Array.from(new Set(unregisteredEmails))) {
+      const emailClean = rawEmail.trim().toLowerCase();
+      if (!emailClean) continue;
+      const token = `token-appt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      const invRecord = {
+        id: `inv-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        email: emailClean,
+        invitation_type: 'appointment' as const,
+        inviter_id: body.creator_id,
         appointment_id: apptId,
-        user_id: uId,
-        invited_by: body.creator_id,
-        status: 'pending',
         can_reshare: body.can_reshare !== false,
+        status: 'pending' as const,
+        token,
         created_at: new Date().toISOString(),
-        profile: userProfile,
-      });
+      };
+      db.invitations.unshift(invRecord);
+      createdInvitations.push(invRecord);
     }
 
     db.appointments.unshift(newAppointment);
@@ -86,8 +116,9 @@ export async function POST(req: NextRequest) {
       data: {
         appointment: newAppointment,
         participants: newParticipants,
+        invitations: createdInvitations,
       },
-      message: 'Appointment successfully saved to server database.',
+      message: 'Appointment and email invitations saved to server database.',
     });
   } catch (error: any) {
     return NextResponse.json(

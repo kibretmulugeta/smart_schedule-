@@ -1,4 +1,35 @@
-import { Profile, Category, Schedule, Appointment, AppointmentParticipantWithProfile } from '@/types/database.types';
+import { Profile, Category, Schedule, Appointment, AppointmentParticipantWithProfile, Invitation } from '@/types/database.types';
+
+export const MOCK_INVITATIONS: Invitation[] = [
+  {
+    id: 'inv-formal-demo',
+    email: 'invited.partner@company.com',
+    invitation_type: 'formal',
+    inviter_id: 'user-admin-kibret',
+    status: 'pending',
+    token: 'token-formal-12345',
+    created_at: '2026-01-05T10:00:00Z',
+    inviter_profile: {
+      id: 'user-admin-kibret',
+      email: 'kibretmail@gmail.com',
+      full_name: 'Kibret Mulugeta (System Admin)',
+      avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      role: 'admin',
+      created_at: '2026-01-01T08:00:00Z',
+    },
+  },
+  {
+    id: 'inv-appt-demo',
+    email: 'guest.consultant@acme.org',
+    invitation_type: 'appointment',
+    inviter_id: 'user-admin-001',
+    appointment_id: 'appt-arch-001',
+    can_reshare: true,
+    status: 'pending',
+    token: 'token-appt-67890',
+    created_at: '2026-01-05T11:00:00Z',
+  },
+];
 
 export const MOCK_PROFILES: Profile[] = [
   {
@@ -48,6 +79,14 @@ export const MOCK_PROFILES: Profile[] = [
     avatar_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
     role: 'user',
     created_at: '2026-01-15T14:20:00Z',
+  },
+  {
+    id: 'user-kaleb',
+    email: 'kalebasnake2019@gmail.com',
+    full_name: 'Kaleb (User)',
+    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=kalebasnake2019%40gmail.com',
+    role: 'user',
+    created_at: '2026-01-16T08:00:00Z',
   },
 ];
 

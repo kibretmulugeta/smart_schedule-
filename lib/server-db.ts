@@ -6,6 +6,7 @@ import {
   AppointmentParticipantWithProfile,
   Category,
   Profile,
+  Invitation,
 } from '@/types/database.types';
 import {
   MOCK_SCHEDULES,
@@ -13,6 +14,7 @@ import {
   MOCK_PARTICIPANTS,
   MOCK_CATEGORIES,
   MOCK_PROFILES,
+  MOCK_INVITATIONS,
 } from '@/lib/mock-data';
 
 const DB_FILE = path.join(process.cwd(), 'data', 'db.json');
@@ -23,6 +25,7 @@ export interface ServerDatabase {
   participants: AppointmentParticipantWithProfile[];
   categories: Category[];
   profiles: Profile[];
+  invitations: Invitation[];
   notifications: any[];
 }
 
@@ -33,6 +36,7 @@ function getDefaultDatabase(): ServerDatabase {
     participants: MOCK_PARTICIPANTS,
     categories: MOCK_CATEGORIES,
     profiles: MOCK_PROFILES,
+    invitations: MOCK_INVITATIONS,
     notifications: [],
   };
 }
@@ -50,7 +54,21 @@ export function readDatabase(): ServerDatabase {
       writeDatabase(initial);
       return initial;
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!parsed.profiles || !Array.isArray(parsed.profiles)) {
+      parsed.profiles = MOCK_PROFILES;
+    } else {
+      // Merge any new mock profiles into parsed profiles if missing
+      for (const mp of MOCK_PROFILES) {
+        if (!parsed.profiles.some((p: any) => p.email.toLowerCase() === mp.email.toLowerCase())) {
+          parsed.profiles.push(mp);
+        }
+      }
+    }
+    if (!parsed.invitations) {
+      parsed.invitations = MOCK_INVITATIONS;
+    }
+    return parsed;
   } catch (error) {
     console.error('Error reading server database file, resetting to defaults:', error);
     const initial = getDefaultDatabase();
@@ -58,6 +76,7 @@ export function readDatabase(): ServerDatabase {
     return initial;
   }
 }
+
 
 export function writeDatabase(data: ServerDatabase): void {
   try {

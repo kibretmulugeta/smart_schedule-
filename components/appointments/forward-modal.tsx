@@ -64,12 +64,24 @@ export function ForwardModal({ isOpen, onClose, appointment }: ForwardModalProps
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-2">
-            Select Colleague to Invite
+          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            Forward to Team Member or Unregistered Email
           </label>
+
+          {/* Custom Email Input */}
+          <div className="flex items-center gap-2 mb-2 p-2 bg-slate-950/80 border border-slate-800 rounded-xl">
+            <input
+              type="email"
+              placeholder="Or enter non-registered email (e.g. partner@external.com)..."
+              value={targetUserId.includes('@') ? targetUserId : ''}
+              onChange={(e) => setTargetUserId(e.target.value.trim())}
+              className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700/80 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+          </div>
+
           {availableProfiles.length === 0 ? (
-            <p className="text-xs text-slate-400 py-3 text-center">
-              All team members are already participants in this meeting.
+            <p className="text-xs text-slate-400 py-2 text-center">
+              All registered team members are already participants in this meeting.
             </p>
           ) : (
             <div className="space-y-2 max-h-44 overflow-y-auto pr-1">

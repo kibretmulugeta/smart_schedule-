@@ -140,6 +140,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(LOCAL_STORAGE_KEY_USER, newProfile.id);
     } catch (e) {}
 
+    // Claim pending invitations for this email address
+    let invitationClaimMessage = '';
+    try {
+      const claimRes = await fetch('/api/invitations', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'claim',
+          email: targetEmail,
+          userId: newProfile.id,
+        }),
+      });
+      if (claimRes.ok) {
+        const claimData = await claimRes.json();
+        if (claimData.claimedCount > 0) {
+          invitationClaimMessage = ` Claimed ${claimData.claimedCount} pending invitation(s)!`;
+        }
+      }
+    } catch (e) {}
+
     // Send Welcome Email Notification
     try {
       fetch('/api/notifications/email', {
@@ -152,14 +172,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           type: 'daily_digest',
           eventTitle: 'Account Verified & Notification Dispatch Active',
           eventDescription:
-            'Your account is ready. You will automatically receive email notifications whenever team members invite you to meetings or your scheduled routines are due.',
+            `Your account is ready.${invitationClaimMessage} You will automatically receive email notifications whenever team members invite you to meetings or your scheduled routines are due.`,
           startTime: new Date().toISOString(),
           hostName: 'Smart Scheduling System',
         }),
       }).catch(() => {});
     } catch (e) {}
 
-    showToast('Account Registered! 🚀', `Registered as ${newProfile.full_name} (${newProfile.email})`, 'success');
+    showToast(
+      'Account Registered! 🚀',
+      `Registered as ${newProfile.full_name} (${newProfile.email}).${invitationClaimMessage}`,
+      'success'
+    );
     return newProfile;
   };
 

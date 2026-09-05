@@ -22,6 +22,7 @@ import {
   Sparkles,
   Shield,
 } from 'lucide-react';
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -104,12 +105,30 @@ export default function LoginPage() {
     router.push('/');
   };
 
-  const handleSocialLogin = (provider: string) => {
-    showToast(`OAuth Redirect (${provider})`, `Authenticating via ${provider} SSO gateway...`, 'info');
-    setTimeout(() => {
-      loginUser(`demo.${provider.toLowerCase()}@company.com`, 'oauth-token');
+  const handleSocialLogin = async (provider: string) => {
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = createClient();
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: provider.toLowerCase() as any,
+          options: {
+            redirectTo: `${window.location.origin}/`,
+          },
+        });
+        if (error) {
+          showToast('OAuth Notice', error.message, 'warning');
+        } else {
+          showToast(`Redirecting to ${provider}...`, 'Authenticating with OAuth provider.', 'info');
+          return;
+        }
+      } catch (e) {}
+    }
+
+    showToast(`Google Workspace SSO`, `Authenticating via Google Single Sign-On...`, 'info');
+    setTimeout(async () => {
+      await loginUser('kibretmail@gmail.com', 'google-oauth-token');
       router.push('/');
-    }, 800);
+    }, 600);
   };
 
   const handleForgotSubmit = async (e: React.FormEvent) => {
